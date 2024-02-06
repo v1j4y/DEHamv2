@@ -19,6 +19,15 @@ void generateConfigurations(size_t norb, size_t nelec, size_t* configAll, size_t
 // Function to find the positions of a list of configurations in a sorted list
 void findPositions(size_t* configList, size_t sizeList, size_t* configs, size_t sizeConfigs, size_t* positions) ;
 
+// Function to return the global ID given CFG and CSF ids
+size_t findGlobalID(size_t cfgid, size_t csfid, size_t nCFG, size_t nCSF) ;
+
+// Functions to find cfg IDs from globalID
+size_t findCFGID(size_t globalID, size_t nCFG, size_t nCSF) ;
+
+// Functions to find csf IDs from globalID
+size_t findCSFID(size_t globalID, size_t nCFG, size_t nCSF) ;
+
 // Function to compare two configurations for qsort and bsearch
 int compare(const void* a, const void* b) ;
 
@@ -34,3 +43,6 @@ double** declare_matrix(int rows, int cols) ;
 
 // A function to save a matrix in a file in CSV format
 void save_matrix(double** matrix, int rows, int cols, char* filename) ;
+
+// Function to generate all possible alpha determinants
+void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, size_t sizeCSF, const igraph_t* graph, size_t Icfg, size_t Icsf, igraph_vector_int_t* monoCFGList, igraph_vector_t* monoMEs) ;

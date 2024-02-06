@@ -38,6 +38,16 @@ int main(int argc,char **argv)
   PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate graphml file with the -f option");
   FILE* graphmlFile = fopen(graphmlFileName, "r");
 
+  /*
+    Enter the options for the number of holes and
+    the total number of alpha electrons.
+  */
+  size_t nholes;
+  size_t nalpha;
+  PetscCall(PetscOptionsGetInt(NULL,NULL,"-nh",&nholes,NULL));
+  PetscCheck(nholes, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate the number of holes with the -nh option");
+  PetscCall(PetscOptionsGetInt(NULL,NULL,"-na",&nalpha,NULL));
+  PetscCheck(nalpha, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate the number of alpha e- with the -na option");
   if (graphmlFile == NULL) {
     fprintf(stderr, "Error opening the file.\n");
     return 1;  // Return an error code or use another error handling method.
@@ -53,164 +63,97 @@ int main(int argc,char **argv)
   }
 
   // Assume configAlpha and configBeta are sorted lists of all possible alpha and beta configurations
-  size_t norb = num_vertices;
-  size_t nalpha = norb/2;
-  size_t nbeta = norb/2;
+  size_t nsites = num_vertices;
+  size_t norb   = nsites*2; // Two orbitals on each site in the DE model
+  size_t nelec = norb - nholes;
+  size_t nbeta = nelec - nalpha;
   int natomax = 100;
 
-  size_t sizeAlpha = binomialCoeff(norb, nalpha);
-  size_t sizeBeta = binomialCoeff(norb, nbeta);
+  size_t sizeCFG  = binomialCoeff(nsites, (nsites-nholes));
+  size_t sizeCSF  = binomialCoeff(nelec, nalpha);
+  size_t sizeTotal  = sizeCFG*sizeCSF;
 
-  size_t* configAlpha = malloc(sizeAlpha * sizeof(size_t));
-  size_t* configBeta = malloc(sizeBeta * sizeof(size_t));
+  size_t* configList = malloc(sizeCFG * sizeof(size_t));
+  size_t* csfList    = malloc(sizeCSF * sizeof(size_t));
 
-  generateConfigurations(norb, nalpha, configAlpha, &sizeAlpha);
-  generateConfigurations(norb, nbeta, configBeta, &sizeBeta);
+  generateConfigurations(nsites, (nsites-nholes), configList, &sizeCFG);
 
   // Sort the lists for binary search
-  qsort(configAlpha, sizeAlpha, sizeof(size_t), compare);
-  qsort(configBeta, sizeBeta, sizeof(size_t), compare);
+  qsort(configList, sizeCFG, sizeof(size_t), compare);
+  printf(" Configuration List # = %ld \n",sizeCFG);
+  for( int i=0; i<sizeCFG; ++i ) {
+    printBits(configList[i], nsites);
+  }
+
+  generateConfigurations(nelec, nalpha, csfList, &sizeCSF);
+
+  // Sort the lists for binary search
+  qsort(csfList, sizeCSF, sizeof(size_t), compare);
+  printf(" CSF           List # = %ld \n",sizeCSF);
+  //for( int i=0; i<sizeCSF; ++i ) {
+  //  printBits(csfList[i], nelec);
+  //}
+
+  printf(" Ne=%ld Na=%ld Nb=%ld \n", nelec, nalpha, nbeta);
+
+  // Get the global address of a CFGxCSF pair.
+  size_t icfg[1];
+  size_t icsf[1];
+  size_t iglobalid;
+  icfg[0] = 11;
+  icsf[0] = 15 - 8 + 16;
+  icfg[0] = configList[4];
+  icsf[0] = csfList[22];
+  size_t icfgid;
+  size_t icsfid;
+
+  findPositions(configList, sizeCFG, icfg, 1, &icfgid);
+  findPositions(csfList, sizeCSF, icsf, 1, &icsfid);
+  iglobalid = findGlobalID(icfgid, icsfid, sizeCFG, sizeCSF);
+  printf(" cfgid = %ld csfid = %ld => glbid = %ld\n",icfgid, icsfid, iglobalid);
+  icfgid = findCFGID(iglobalid, sizeCFG, sizeCSF);
+  icsfid = findCSFID(iglobalid, sizeCFG, sizeCSF);
+  printf(" cfgid = %ld csfid = %ld => glbid = %ld\n",icfgid, icsfid, iglobalid);
+
+  igraph_vector_int_t monoCFGList;
+  igraph_vector_int_init(&monoCFGList, 0);
+  igraph_vector_t monoMEs;
+  igraph_vector_init(&monoMEs, 0);
+  generateMonoCFGs(configList, sizeCFG, csfList, sizeCSF, &graph, icfg[0], icsf[0], &monoCFGList, &monoMEs);
+  printf(" Final ----- \n");
+  for( int i=0; i<igraph_vector_int_size(&monoCFGList); ++i ) {
+    printf(" %d >> %f \n",i, VECTOR(monoMEs)[i]);
+    iglobalid = VECTOR(monoCFGList)[i];
+    icfgid = findCFGID(iglobalid, sizeCFG, sizeCSF);
+    icsfid = findCSFID(iglobalid, sizeCFG, sizeCSF);
+    printBits(configList[icfgid], nsites);
+    printBits(csfList[icsfid], nelec);
+  }
 
   // Declare a matrix of size 3 x 4
-  int rows = sizeAlpha * sizeBeta;
-  int cols = rows;
+  //int rows = sizeAlpha * sizeBeta;
+  //int cols = rows;
   //double** matrix = declare_matrix(rows, cols);
 
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
      Define Hamiltonian
      - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-  double J =  1.0;
+  double J =  0.01;
+  double K =  6.0;
   double t = -1.0;
 
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
      Compute the operator matrix that defines the eigensystem, Ax=kx
      - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-  PetscInt       n=sizeAlpha*sizeBeta,i,Istart,Iend,nev,maxit,its,nconv;
+  PetscInt       n=sizeTotal,i,Istart,Iend,nev,maxit,its,nconv;
   PetscInt		   ncv, mpd;
 
   PetscCall(PetscOptionsGetInt(NULL,NULL,"-n",&n,NULL));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD,"====================================================="));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD,"\nDEHamv2: Double Exchange Eigenproblem, n=%" PetscInt_FMT "\n",n));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD,"=====================================================\n\n"));
-  //PetscCall(MatCreate(PETSC_COMM_WORLD,&A));
-  //PetscCall(MatSetSizes(A,PETSC_DECIDE,PETSC_DECIDE,n,n));
-  //PetscCall(MatCreateAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,n,n,3*num_vertices,NULL,3*num_vertices,NULL,&A));
-  //PetscCall(MatMPIAIJSetPreallocation(A,3*num_vertices,NULL,3*num_vertices,NULL));
-  ////PetscCall(MatSetFromOptions(A));
-  ////PetscCall(MatSetUp(A));
-  ///*
-  // * Matrix for the S2 operator
-  //  */
-  //PetscCall(MatCreate(PETSC_COMM_WORLD,&S2));
-  //PetscCall(MatSetSizes(S2,PETSC_DECIDE,PETSC_DECIDE,n,n));
-  //PetscCall(MatCreateAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,n,n,4*num_vertices,NULL,4*num_vertices,NULL,&S2));
-  //PetscCall(MatMPIAIJSetPreallocation(S2,4*num_vertices,NULL,4*num_vertices,NULL));
-
-  //PetscCall(PetscPrintf(PETSC_COMM_WORLD,"\n Number of vertices: %ld",(long)num_vertices));
-  //PetscCall(PetscPrintf(PETSC_COMM_WORLD,"\n Number of configurations alpha = %ld, beta = %ld\n",sizeAlpha,sizeBeta));
-  //PetscCall(PetscTime(&tt1));
-
-  ///*
-  // * Initialize Hamiltonian
-  //  */
-  //PetscCall(MatGetOwnershipRange(A,&Istart,&Iend));
-  //for (i=Istart;i<Iend;i++) {
-
-  //  igraph_vector_t MElist;
-  //  igraph_vector_init(&MElist, 0);
-  //  igraph_vector_t Jdetlist;
-  //  igraph_vector_init(&Jdetlist, 0);
-
-  //  int diag = getHubbardDiag(i, configAlpha, sizeAlpha, configBeta, sizeBeta);
-  //  PetscCall(MatSetValue(A,i,i,(double)diag,INSERT_VALUES));
-  //  //matrix[i][i] = (double)diag*U;
-  //  getAllHubbardMEs(i, &MElist, &Jdetlist, configAlpha, sizeAlpha, configBeta, sizeBeta, &graph);
-  //  for (int j = 0; j < igraph_vector_size(&Jdetlist); ++j) {
-  //    int Jid = VECTOR(Jdetlist)[j];
-  //    //matrix[i][Jid] = t*VECTOR(MElist)[j];
-  //    PetscCall(MatSetValue(A,i,Jid,t*(double)VECTOR(MElist)[j],INSERT_VALUES));
-  //  }
-
-  //  igraph_vector_destroy(&MElist);
-  //  igraph_vector_destroy(&Jdetlist);
-  //}
-  //PetscCall(PetscTime(&tt2));
-  //PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to build the matrix: %f\n",tt2-tt1));
-
-
-  //PetscCall(PetscTime(&tt1));
-  //PetscCall(MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY));
-  //PetscCall(MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY));
-  //PetscCall(PetscTime(&tt2));
-  //PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to assemble the matrix: %f\n",tt2-tt1));
-
-  ///*
-  // * Initialize S2 operator
-  //  */
-  //PetscCall(MatGetOwnershipRange(S2,&Istart,&Iend));
-  //for (i=Istart;i<Iend;i++) {
-
-  //  igraph_vector_t MElist;
-  //  igraph_vector_init(&MElist, 0);
-  //  igraph_vector_t Jdetlist;
-  //  igraph_vector_init(&Jdetlist, 0);
-
-  //  getS2Operator(i, &MElist, &Jdetlist, configAlpha, sizeAlpha, configBeta, sizeBeta, &graph, num_vertices, natomax);
-  //  for (int j = 0; j < igraph_vector_size(&Jdetlist); ++j) {
-  //    int Jid = VECTOR(Jdetlist)[j];
-  //    //matrix[i][Jid] = VECTOR(MElist)[j];
-  //    //printf(" %d %10.5f \n",Jid, VECTOR(MElist)[j]);
-  //    PetscCall(MatSetValue(S2,i,Jid,t*(double)VECTOR(MElist)[j],INSERT_VALUES));
-  //  }
-
-  //  igraph_vector_destroy(&MElist);
-  //  igraph_vector_destroy(&Jdetlist);
-  //}
-  //PetscCall(PetscTime(&tt2));
-  //PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to build the S2 operator: %f\n",tt2-tt1));
-
-
-  //PetscCall(PetscTime(&tt1));
-  //PetscCall(MatAssemblyBegin(S2,MAT_FINAL_ASSEMBLY));
-  //PetscCall(MatAssemblyEnd(S2,MAT_FINAL_ASSEMBLY));
-  //PetscCall(PetscTime(&tt2));
-  //PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to assemble the matrix: %f\n",tt2-tt1));
-
-  //PetscCall(MatCreateVecs(A,NULL,&xr));
-  //PetscCall(MatCreateVecs(A,NULL,&xi));
-  //PetscCall(MatCreateVecs(A,NULL,&vs2));
-
-  //// Save file
-  ////save_matrix(matrix, rows, cols, "/tmp/benzene_c.csv");
-
-  ///* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  //              Create the eigensolver and set various options
-  //   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-  ///*
-  //   Create eigensolver context
-  //*/
-  //PetscCall(EPSCreate(PETSC_COMM_WORLD,&eps));
-
-  ///*
-  //   Set operators. In this case, it is a standard eigenvalue problem
-  //*/
-  //PetscCall(EPSSetOperators(eps,A,NULL));
-  //PetscCall(EPSSetProblemType(eps,EPS_HEP));
-  //PetscCall(EPSSetWhichEigenpairs(eps,EPS_SMALLEST_REAL));
-
-  ///*
-  //   Set solver parameters at runtime
-  //*/
-  //tol = 1.e-9;
-  //maxit = 10000000;
-  //PetscCall(EPSSetTolerances(eps,tol,maxit));
-  ////ncv  = 9;
-  ////mpd  = 10;
-  ////nev  = 4;
-  ////PetscCall(EPSSetDimensions(eps,nev,PETSC_DECIDE,PETSC_DECIDE));
-  //PetscCall(EPSSetFromOptions(eps));
 
   ///* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   //                    Solve the eigensystem
@@ -289,8 +232,7 @@ int main(int argc,char **argv)
   // Close the file when you're done with it.
   fclose(graphmlFile);
 
-  free(configAlpha);
-  free(configBeta);
+  free(configList);
 
   // Free the memory allocated for the matrix
   //for (int i = 0; i < rows; i++) {
