@@ -94,6 +94,45 @@ int getPhase(size_t alphaConfig, size_t newAlphaConfig, size_t h, size_t p) {
     return nperm;
 }
 
+int getExecDegree(size_t detI, size_t detJ) {
+    // Result
+    size_t result;
+    determinant_t d1[1];
+    determinant_t d2[1];
+    d1[0] = detI;
+    d2[0] = detJ;
+    result = exc_degree((size_t) 1, d1, d2);
+    return result;
+}
+
+int getHoles_1ex(size_t detI, size_t detJ, size_t *holesOut) {
+    // Result
+    size_t nholes;
+
+    determinant_t d1[1];
+    determinant_t d2[1];
+    d1[0] = detI;
+    d2[0] = detJ;
+    orbital_t holes[2];
+    nholes = get_holes((size_t) 1, d1, d2, holes);
+    holesOut[0] = holes[0];
+    return nholes;
+}
+
+int getPart_1ex(size_t detI, size_t detJ, size_t *particlesOut) {
+    // Result
+    size_t nparticles;
+
+    determinant_t d1[1];
+    determinant_t d2[1];
+    d1[0] = detI;
+    d2[0] = detJ;
+    orbital_t particles[2];
+    nparticles = get_particles((size_t) 1, d1, d2, particles);
+    particlesOut[0] = particles[0];
+    return nparticles;
+}
+
 // A function to declare a matrix of given size and initialize it to 0
 double** declare_matrix(int rows, int cols) {
     // Allocate memory for the matrix
@@ -171,26 +210,23 @@ void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, si
     size_t nholes = norb - popcnt ( Icfg );
     size_t nelec = 2*norb - nholes;
     int phase = 1;
-    //printf(" Icfg=%ld Icsf=%ld | nelec=%ld norb=%ld nholes=%ld\n",Icfg,Icsf,nelec,norb,nholes);
 
     // Loop over each orbital
     for (size_t i = 0; i < norb; ++i) {
-        //printf(" === %ld === \n",i);
         // Check if the orbital is occupied
         if ((Icfg >> i) & 1) {
             // Get the connected vertices
             igraph_vector_int_t orbital_id_allowed;
             igraph_vector_int_init(&orbital_id_allowed, 0);
             getConnectedVertices(graph, (igraph_integer_t)i, &orbital_id_allowed);
-            //printf(" --- %ld | %ld--- \n",i,igraph_vector_int_size(&orbital_id_allowed));
 
             // Loop over each connected vertex
             for (size_t j = 0; j < igraph_vector_int_size(&orbital_id_allowed); ++j) {
                 size_t orbital_id = VECTOR(orbital_id_allowed)[j];
-                //printf(" >> %ld | %ld\n",orbital_id, ((Icfg >> orbital_id) & (size_t)1) );
 
                 // Check if the connected vertex is unoccupied
                 if (!((Icfg >> orbital_id) & (size_t)1)) {
+
                     // Create a new alpha determinant by moving the electron
                     size_t Jcfg = Icfg ^ (((size_t)1 << i) | ((size_t)1 << orbital_id));
 

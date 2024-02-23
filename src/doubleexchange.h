@@ -38,6 +38,11 @@ void printPositions(size_t* positions, size_t size) ;
 
 int getPhase(size_t alphaConfig, size_t newAlphaConfig, size_t h, size_t p) ;
 
+int getExecDegree(size_t detI, size_t detJ) ;
+
+int getHoles_1ex(size_t detI, size_t detJ, size_t *holesOut) ;
+int getPart_1ex(size_t detI, size_t detJ, size_t *particlesOut) ;
+
 // A function to declare a matrix of given size and initialize it to 0
 double** declare_matrix(int rows, int cols) ;
 

@@ -87,12 +87,85 @@ int main(int argc,char **argv)
 
   generateConfigurations(nelec, nalpha, csfList, &sizeCSF);
 
+  /* Note on ordering of determinants
+   * =================================
+   *
+   *
+   * Setup of the sites
+   * -------------------
+   *
+   * Family 1 : --  --  --  --
+   * Family 2 : --  --  --  --
+   *
+   * Holes are allowed only on the
+   * 1st family of orbitals.
+   * Configurations are generated only
+   * for those orbitals i.e. nsites orbitals.
+   *
+   * The CSFs are generated for all the electrons
+   * i.e. potentially 2*nsites.
+   *
+   * Ordering of CSFs
+   * -----------------
+   *
+   * The ordering of the CSFs is as follows
+   *
+   * -----------------
+   * | Fam 1 | Fam 2 |
+   * -----------------
+   * |1010100|0011001|
+   * -----------------
+   *
+   * The first part corresponds to the Family 1
+   * orbital set and the second part to
+   * the Family 2 orbital set.
+   *
+   * This makes it easier to find the phase
+   * change for one electron substitution.
+   *
+   * Ordering of alpha and beta
+   * ---------------------------
+   *
+   * The alpha and beta electrons are
+   * ordered as follows
+   *
+   * a1b1 a2b2 a3b3 ...
+   *
+   * where a1 is alpha for orbital 1
+   * and b1 is beta electron for orbital 2
+   *
+   * This is different from
+   * a1a2a3... b1b2b3...
+   * where alpha and beta are separated.
+   *
+   *
+    */
+
+
   // Sort the lists for binary search
   qsort(csfList, sizeCSF, sizeof(size_t), compare);
   printf(" CSF           List # = %ld \n",sizeCSF);
-  //for( int i=0; i<sizeCSF; ++i ) {
-  //  printBits(csfList[i], nelec);
-  //}
+  for( int i=0; i<sizeCSF; ++i ) {
+    //printBits(csfList[i], nelec);
+    for( int j=i; j<sizeCSF; ++j ) {
+      //printBits(csfList[j], nelec);
+      int excDeg = getExecDegree(csfList[i], csfList[j]);
+      if (excDeg == 1) {
+        size_t holes[1];
+        size_t part[1];
+        excDeg = getHoles_1ex(csfList[i], csfList[j], holes);
+        excDeg = getPart_1ex(csfList[i], csfList[j], part);
+        size_t p=part[0];
+        size_t h=holes[0];
+        igraph_bool_t res;
+        igraph_integer_t v1, v2;
+        v1 = h+1;
+        v2 = p+1;
+        //printf(" %d %d = %d (h=%ld p=%ld) => %d\n", i, j, excDeg, v1, v2, res);
+        //igraph_are_connected(&graph, h, p, &res);
+      }
+    }
+  }
 
   printf(" Ne=%ld Na=%ld Nb=%ld \n", nelec, nalpha, nbeta);
 
