@@ -158,111 +158,6 @@ int main(int argc,char **argv)
   // Sort the lists for binary search
   qsort(csfList, sizeCSF, sizeof(size_t), compare);
   printf(" CSF           List # = %ld \n",sizeCSF);
-  //for( int i=0; i<sizeCSF; ++i ) {
-  //  printf(" --- %d ---\n",i);
-  //  printBits(csfList[i], nelec);
-  //  for( int j=i; j<sizeCSF; ++j ) {
-  //    printBits(csfList[j], nelec);
-  //    int excDeg = getExecDegree(csfList[i], csfList[j]);
-  //    if (excDeg == 1) {
-  //      size_t holes[1];
-  //      size_t part[1];
-  //      excDeg = getHoles_1ex(csfList[i], csfList[j], holes);
-  //      excDeg = getPart_1ex(csfList[i], csfList[j], part);
-  //      size_t p=part[0];
-  //      size_t h=holes[0];
-  //      if( (p <= nsites && h <= nsites) || (p > nsites && h > nsites) ) {
-  //        igraph_bool_t res;
-  //        igraph_integer_t v1, v2;
-  //        v1 = ((h-1) % nsites);
-  //        v2 = ((p-1) % nsites);
-  //        igraph_are_connected(&graph, v1, v2, &res);
-  //        if (res) printf(" %d %d = %d (h=%ld p=%ld) => %d\n", i, j, excDeg, v1, v2, res);
-  //        //printf(" %d %d = %d (h=%ld p=%ld) => %d\n", i, j, excDeg, v1, v2, res);
-  //      }
-  //    }
-  //  }
-  //}
-
-  //for( int i=0; i<sizeCFG; ++i ) {
-  //  printf(" --- %d ---\n",i);
-  //  printBits(configList[i], nsites);
-  //  size_t Icfg = configList[i];
-  //  for( int j=0; j<nsites; ++j ) {
-  //    if ((Icfg >> j) & 1) {
-  //      // Get the connected vertices
-  //      igraph_vector_int_t orbital_id_allowed;
-  //      igraph_vector_int_init(&orbital_id_allowed, 0);
-  //      getConnectedVertices(&graph, (igraph_integer_t)j, &orbital_id_allowed);
-  //      printf(" > %d \n",j);
-
-  //      // Calculate J
-  //      // Loop over each connected vertex
-  //      for (size_t k = 0; k < igraph_vector_int_size(&orbital_id_allowed); ++k) {
-  //        size_t orbital_id = VECTOR(orbital_id_allowed)[k];
-  //        if((( (Icfg >> j ) & 1) & ((Icfg >> orbital_id) & 1)) & (j>orbital_id)) {
-  //          // Find the real index
-  //          size_t i0, j0;
-  //          size_t mask = (((size_t)1 << (j+1)) - 1);
-  //          i0 = j - popcnt ( mask ^ (mask & Icfg));
-  //          mask = (((size_t)1 << (orbital_id+1))-1);
-  //          j0 = orbital_id - popcnt ( mask ^ (mask & Icfg));
-  //          //printf(" > \t %d %ld\n",j, orbital_id);
-  //          if ( (i0 != j0) ) {
-  //            // Loop over CSFs
-  //            for( int l=0; l<sizeCSF; ++l ) {
-  //              size_t Icsf = csfList[l];
-  //              if( (( (Icsf >> i0 ) & 1) ^ ((Icsf >> j0) & 1))  ) {
-  //                //printf(" %d | (%ld %ld)\n",l,i0,j0);
-  //                //printBits(Icsf, nelec);
-  //                size_t Jcsf = Icsf;
-  //                Jcsf = Jcsf ^ ((size_t)1 << (i0));
-  //                Jcsf = Jcsf ^ ((size_t)1 << (j0));
-  //                //printBits(Jcsf, nelec);
-  //              }
-  //            }
-  //          }
-
-  //        }
-  //      }
-
-  //      // Calculate K
-  //      // Check if there's K
-  //      for( int l=0; l<sizeCSF; ++l ) {
-  //        size_t Icsf = csfList[l];
-  //        size_t i0, j0;
-  //        size_t mask = (((size_t)1 << (j+1)) - 1);
-  //        i0 = j - popcnt ( mask ^ (mask & Icfg));
-  //        j0 = j + nelecF1;
-  //        if( (( (Icsf >> i0 ) & 1) ^ ((Icsf >> j0) & 1))  ) {
-  //          printf(" %d | (%ld %ld)\n",l,i0,j0);
-  //          printBits(Icsf, nelec);
-  //          size_t Jcsf = Icsf;
-  //          Jcsf = Jcsf ^ ((size_t)1 << (i0));
-  //          Jcsf = Jcsf ^ ((size_t)1 << (j0));
-  //          printBits(Jcsf, nelec);
-  //        }
-  //      }
-  //    }
-  //  }
-  //}
-
-  //for( int i=0; i<sizeCSF; ++i ) {
-  //  printf("\n --- %d ---\n",i);
-  //  printBits(csfList[i], nelec);
-  //  size_t Icsf = csfList[i];
-  //  for( int j=0; j<nsites; ++j ) {
-
-  //    size_t orbital_id = j + nelecF1;
-  //    printf(" > \t %d %ld\n",j, orbital_id);
-  //    if((( (Icsf >> j ) & 1) ^ ((Icsf >> orbital_id) & 1))) {
-  //      size_t Jcsf = Icsf;
-  //      Jcsf = Jcsf ^ ((size_t)1 << (j));
-  //      Jcsf = Jcsf ^ ((size_t)1 << (orbital_id));
-  //      printBits(Jcsf, nelec);
-  //    }
-  //  }
-  //}
 
   // Declare a matrix of size 3 x 4
   int rows = sizeTotal;
@@ -271,72 +166,34 @@ int main(int argc,char **argv)
 
   printf(" Ne=%ld Na=%ld Nb=%ld \n", nelec, nalpha, nbeta);
 
-  // Get the global address of a CFGxCSF pair.
-  size_t icfg[1];
-  size_t icsf[1];
-  size_t iglobalid;
-  //icfg[0] = 11;
-  //icsf[0] = 15 - 8 + 16;
-  //icfg[0] = configList[4];
-  //icsf[0] = csfList[22];
-  icfg[0] = configList[1];
-  icsf[0] = csfList[1];
-  size_t icfgid;
-  size_t icsfid;
+  //for( int j=0; j<sizeCFG; ++j ) {
+  //  icfg[0] = configList[j];
+  //  for( int k=0; k<sizeCSF; ++k ) {
+  //    icsf[0] = csfList[k];
+  //    size_t posi = findGlobalID(j, k, sizeCFG, sizeCSF);
+  //    igraph_vector_int_t monoCFGList;
+  //    igraph_vector_int_init(&monoCFGList, 0);
+  //    igraph_vector_t monoMEs;
+  //    igraph_vector_init(&monoMEs, 0);
+  //    generateMonoCFGs(configList, sizeCFG, csfList, sizeCSF, &graph, icfg[0], icsf[0], &monoCFGList, &monoMEs, Jme, Kme);
+  //    printf(" posi=%ld \n",posi);
+  //    for( int i=0; i<igraph_vector_int_size(&monoCFGList); ++i ) {
+  //      iglobalid = VECTOR(monoCFGList)[i];
+  //      icfgid = findCFGID(iglobalid, sizeCFG, sizeCSF);
+  //      icsfid = findCSFID(iglobalid, sizeCFG, sizeCSF);
+  //      size_t posj = VECTOR(monoCFGList)[i];
+  //      double val  = VECTOR(monoMEs)[i];
+  //      matrix[posi][posj] = val;
+  //      printf("(%ld, %ld) = %f\n",posi, posj, val);
+  //    }
 
-  findPositions(configList, sizeCFG, icfg, 1, &icfgid);
-  findPositions(csfList, sizeCSF, icsf, 1, &icsfid);
-  iglobalid = findGlobalID(icfgid, icsfid, sizeCFG, sizeCSF);
-  printf(" cfgid = %ld csfid = %ld => glbid = %ld\n",icfgid, icsfid, iglobalid);
-  icfgid = findCFGID(iglobalid, sizeCFG, sizeCSF);
-  icsfid = findCSFID(iglobalid, sizeCFG, sizeCSF);
-  printf(" cfgid = %ld csfid = %ld => glbid = %ld\n",icfgid, icsfid, iglobalid);
-
-  igraph_vector_int_t monoCFGList;
-  igraph_vector_int_init(&monoCFGList, 0);
-  igraph_vector_t monoMEs;
-  igraph_vector_init(&monoMEs, 0);
-  generateMonoCFGs(configList, sizeCFG, csfList, sizeCSF, &graph, icfg[0], icsf[0], &monoCFGList, &monoMEs, Jme, Kme);
-  printf(" Final ----- \n");
-  for( int i=0; i<igraph_vector_int_size(&monoCFGList); ++i ) {
-    printf(" %d >> %ld, %f \n",i, VECTOR(monoCFGList)[i], VECTOR(monoMEs)[i]);
-    iglobalid = VECTOR(monoCFGList)[i];
-    icfgid = findCFGID(iglobalid, sizeCFG, sizeCSF);
-    icsfid = findCSFID(iglobalid, sizeCFG, sizeCSF);
-    printBits(configList[icfgid], nsites);
-    printBits(csfList[icsfid], nelec);
-  }
-  igraph_vector_int_destroy(&monoCFGList);
-  igraph_vector_destroy(&monoMEs);
-
-  for( int j=0; j<sizeCFG; ++j ) {
-    icfg[0] = configList[j];
-    for( int k=0; k<sizeCSF; ++k ) {
-      icsf[0] = csfList[k];
-      size_t posi = findGlobalID(j, k, sizeCFG, sizeCSF);
-      igraph_vector_int_t monoCFGList;
-      igraph_vector_int_init(&monoCFGList, 0);
-      igraph_vector_t monoMEs;
-      igraph_vector_init(&monoMEs, 0);
-      generateMonoCFGs(configList, sizeCFG, csfList, sizeCSF, &graph, icfg[0], icsf[0], &monoCFGList, &monoMEs, Jme, Kme);
-      printf(" posi=%ld \n",posi);
-      for( int i=0; i<igraph_vector_int_size(&monoCFGList); ++i ) {
-        iglobalid = VECTOR(monoCFGList)[i];
-        icfgid = findCFGID(iglobalid, sizeCFG, sizeCSF);
-        icsfid = findCSFID(iglobalid, sizeCFG, sizeCSF);
-        size_t posj = VECTOR(monoCFGList)[i];
-        double val  = VECTOR(monoMEs)[i];
-        matrix[posi][posj] = val;
-        printf("(%ld, %ld) = %f\n",posi, posj, val);
-      }
-
-      igraph_vector_int_destroy(&monoCFGList);
-      igraph_vector_destroy(&monoMEs);
-    }
-  }
+  //    igraph_vector_int_destroy(&monoCFGList);
+  //    igraph_vector_destroy(&monoMEs);
+  //  }
+  //}
 
   // Save file
-  save_matrix(matrix, rows, cols, "/tmp/4x4_de.csv");
+  //save_matrix(matrix, rows, cols, "/tmp/4x4_de.csv");
 
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
      Compute the operator matrix that defines the eigensystem, Ax=kx
@@ -349,27 +206,104 @@ int main(int argc,char **argv)
   PetscCall(PetscPrintf(PETSC_COMM_WORLD,"====================================================="));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD,"\nDEHamv2: Double Exchange Eigenproblem, n=%" PetscInt_FMT "\n",n));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD,"=====================================================\n\n"));
+  // Symmetric Matrix
+  PetscCall(MatCreate(PETSC_COMM_WORLD,&A));
+  PetscCall(MatCreateSBAIJ(PETSC_COMM_WORLD,1,PETSC_DECIDE,PETSC_DECIDE,n,n,n,NULL,n,NULL,&A));
+  //PetscCall(MatSetSizes(A,PETSC_DECIDE,PETSC_DECIDE,n,n));
+  PetscCall(MatSetType ( A, MATSBAIJ));
+  PetscCall(MatMPIBAIJSetPreallocation(A,1,n,NULL,n,NULL));
 
-  ///* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  //                    Solve the eigensystem
-  //   - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+  /*
+   * Initialize Hamiltonian
+    */
+  PetscCall(MatGetOwnershipRange(A,&Istart,&Iend));
+  for (i=Istart;i<Iend;i++) {
 
-  //PetscCall(PetscTime(&t1));
-  //PetscCall(EPSSolve(eps));
-  //PetscCall(PetscTime(&t2));
-  //PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to Solve EVP: %f\n",t2-t1));
+    size_t cfgid = findCFGID(i, sizeCFG, sizeCSF);
+    size_t csfid = findCFGID(i, sizeCFG, sizeCSF);
+    size_t icfg[1];
+    size_t icsf[1];
+    icfg[0] = configList[cfgid];
+    icsf[0] = csfList[csfid];
 
-  ///*
-  //   Optional: Get some information from the solver and display it
-  //*/
-  //PetscCall(EPSGetIterationNumber(eps,&its));
-  //PetscCall(PetscPrintf(PETSC_COMM_WORLD," Number of iterations of the method: %" PetscInt_FMT "\n",its));
-  //PetscCall(EPSGetType(eps,&type));
-  //PetscCall(PetscPrintf(PETSC_COMM_WORLD," Solution method: %s\n\n",type));
-  //PetscCall(EPSGetDimensions(eps,&nev,NULL,NULL));
-  //PetscCall(PetscPrintf(PETSC_COMM_WORLD," Number of requested eigenvalues: %" PetscInt_FMT "\n",nev));
-  //PetscCall(EPSGetTolerances(eps,&tol,&maxit));
-  //PetscCall(PetscPrintf(PETSC_COMM_WORLD," Stopping condition: tol=%.4g, maxit=%" PetscInt_FMT "\n",(double)tol,maxit));
+    igraph_vector_int_t monoCFGList;
+    igraph_vector_int_init(&monoCFGList, 0);
+    igraph_vector_t monoMEs;
+    igraph_vector_init(&monoMEs, 0);
+
+    generateMonoCFGs(configList, sizeCFG, csfList, sizeCSF, &graph, icfg[0], icsf[0], &monoCFGList, &monoMEs, Jme, Kme);
+    for (int j = 0; j < igraph_vector_int_size(&monoCFGList); ++j) {
+      PetscInt Jid = VECTOR(monoCFGList)[j];
+      PetscReal val = VECTOR(monoMEs)[j];
+      if( i > Jid ) PetscCall(MatSetValue(A,Jid,i,t*(PetscReal)val,INSERT_VALUES));
+      else          PetscCall(MatSetValue(A,i,Jid,t*(PetscReal)val,INSERT_VALUES));
+    }
+
+    igraph_vector_int_destroy(&monoCFGList);
+    igraph_vector_destroy(&monoMEs);
+  }
+  PetscCall(PetscTime(&tt2));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to build the matrix: %f\n",tt2-tt1));
+
+
+  PetscCall(PetscTime(&tt1));
+  PetscCall(MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY));
+  PetscCall(MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY));
+  PetscCall(PetscTime(&tt2));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to assemble the matrix: %f\n",tt2-tt1));
+  //PetscCall(MatView(A, viewer));
+
+  PetscCall(MatCreateVecs(A,NULL,&xr));
+  PetscCall(MatCreateVecs(A,NULL,&xi));
+  PetscCall(MatCreateVecs(A,NULL,&vs2));
+
+  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                Create the eigensolver and set various options
+     - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+  /*
+     Create eigensolver context
+  */
+  PetscCall(EPSCreate(PETSC_COMM_WORLD,&eps));
+
+  /*
+     Set operators. In this case, it is a standard eigenvalue problem
+  */
+  PetscCall(EPSSetOperators(eps,A,NULL));
+  PetscCall(EPSSetProblemType(eps,EPS_HEP));
+  PetscCall(EPSSetWhichEigenpairs(eps,EPS_SMALLEST_REAL));
+
+  /*
+     Set solver parameters at runtime
+  */
+  tol = 1.e-16;
+  maxit = 10000000;
+  PetscCall(EPSSetTolerances(eps,tol,maxit));
+  //ncv  = 9;
+  //mpd  = 10;
+  //nev  = 4;
+  //PetscCall(EPSSetDimensions(eps,nev,PETSC_DECIDE,PETSC_DECIDE));
+  PetscCall(EPSSetFromOptions(eps));
+
+  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                      Solve the eigensystem
+     - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+  PetscCall(PetscTime(&t1));
+  PetscCall(EPSSolve(eps));
+  PetscCall(PetscTime(&t2));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to Solve EVP: %f\n",t2-t1));
+
+  /*
+     Optional: Get some information from the solver and display it
+  */
+  PetscCall(EPSGetIterationNumber(eps,&its));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," Number of iterations of the method: %" PetscInt_FMT "\n",its));
+  PetscCall(EPSGetType(eps,&type));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," Solution method: %s\n\n",type));
+  PetscCall(EPSGetDimensions(eps,&nev,NULL,NULL));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," Number of requested eigenvalues: %" PetscInt_FMT "\n",nev));
+  PetscCall(EPSGetTolerances(eps,&tol,&maxit));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," Stopping condition: tol=%.4g, maxit=%" PetscInt_FMT "\n",(double)tol,maxit));
 
 
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -379,8 +313,8 @@ int main(int argc,char **argv)
      Get number of converged approximate eigenpairs
   */
   nconv = 0;
-  //PetscCall(EPSGetConverged(eps,&nconv));
-  //PetscCall(PetscPrintf(PETSC_COMM_WORLD," Number of converged eigenpairs: %" PetscInt_FMT "\n\n",nconv));
+  PetscCall(EPSGetConverged(eps,&nconv));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," Number of converged eigenpairs: %" PetscInt_FMT "\n\n",nconv));
 
   if (nconv>0) {
     /*
@@ -412,8 +346,8 @@ int main(int argc,char **argv)
       /*
        * Get Spin S2 value
        */
-      PetscCall(MatMult(S2, xr, vs2));
-      PetscCall(VecDot(xr, vs2, &dot));
+      //PetscCall(MatMult(S2, xr, vs2));
+      //PetscCall(VecDot(xr, vs2, &dot));
 
       if (im!=0.0) PetscCall(PetscPrintf(PETSC_COMM_WORLD," %9f%+9fi %12g\n",(double)re,(double)im,(double)error));
       else PetscCall(PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12g       %12f\n",(double)re,(double)error,(double)abs(dot)));
@@ -438,11 +372,11 @@ int main(int argc,char **argv)
   /*
      Free work space
   */
-  //PetscCall(EPSDestroy(&eps));
-  //PetscCall(MatDestroy(&A));
-  //PetscCall(VecDestroy(&xr));
-  //PetscCall(VecDestroy(&xi));
-  //PetscCall(VecDestroy(&vs2));
+  PetscCall(EPSDestroy(&eps));
+  PetscCall(MatDestroy(&A));
+  PetscCall(VecDestroy(&xr));
+  PetscCall(VecDestroy(&xi));
+  PetscCall(VecDestroy(&vs2));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD,"===========================================\n"));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD,"HubHam: Success !!!                      \n"));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD,"===========================================\n"));
