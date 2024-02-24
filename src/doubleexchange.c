@@ -133,6 +133,16 @@ int getPart_1ex(size_t detI, size_t detJ, size_t *particlesOut) {
     return nparticles;
 }
 
+// Get maximum neighbors
+int getMaxNeighbors(const igraph_t* graph, size_t nsites) {
+    int max_nbrs = 0;
+    for(int i=0; i<nsites; ++i) {
+        int nbrs = getNumberOfConnectedVertices(graph, (igraph_integer_t)i);
+        if(nbrs > max_nbrs) max_nbrs = nbrs;
+    }
+    return(max_nbrs);
+}
+
 // A function to declare a matrix of given size and initialize it to 0
 double** declare_matrix(int rows, int cols) {
     // Allocate memory for the matrix
@@ -204,12 +214,15 @@ void save_matrix(double** matrix, int rows, int cols, char* filename) {
 }
 
 // Function to generate all possible alpha determinants
-void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, size_t sizeCSF, const igraph_t* graph, size_t Icfg, size_t Icsf, igraph_vector_int_t* monoCFGList, igraph_vector_t* monoMEs) {
+void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, size_t sizeCSF, const igraph_t* graph, size_t Icfg, size_t Icsf, igraph_vector_int_t* monoCFGList, igraph_vector_t* monoMEs, double Jme, double Kme) {
     // Get the number of orbitals
     size_t norb = igraph_vcount(graph);
     size_t nholes = norb - popcnt ( Icfg );
     size_t nelec = 2*norb - nholes;
+    size_t nelecF1 = norb - nholes;
     int phase = 1;
+    size_t posCFG;
+    findPositions(configList, sizeConfig, &Icfg, 1, &posCFG);
 
     // Loop over each orbital
     for (size_t i = 0; i < norb; ++i) {
@@ -230,27 +243,29 @@ void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, si
                     // Create a new alpha determinant by moving the electron
                     size_t Jcfg = Icfg ^ (((size_t)1 << i) | ((size_t)1 << orbital_id));
 
-                    // Find the phase
+                    // Find the position of the new alpha determinant in the list and add it to alphaDeterminants
+                    size_t posCFG;
+                    findPositions(configList, sizeConfig, &Jcfg, 1, &posCFG);
+
+                    // Now the CSFs and the phase
+
+                    // Prepare the mask
                     size_t maskI = ~((size_t)1 << (orbital_id));
                     size_t Icfgmask = Icfg & maskI;
                     size_t maskJ = ~((size_t)1 << (i));
                     size_t Jcfgmask = Jcfg & maskJ;
 
-                    // Find the position of the new alpha determinant in the list and add it to alphaDeterminants
-                    size_t posCFG;
-                    findPositions(configList, sizeConfig, &Jcfg, 1, &posCFG);
+                    // Find the equivalent ids for the CSFs
                     size_t i0, j0;
                     size_t mask = (((size_t)1 << (i+1)) - 1);
-                    //printf(" masks \n");
-                    //printBits(mask, 64);
                     i0 = i - popcnt ( mask ^ (mask & Icfg));
+
                     mask = (((size_t)1 << (orbital_id+1))-1);
-                    //printBits(mask, 64);
                     j0 = orbital_id - popcnt ( mask ^ (mask & Jcfg));
-                    //printf(" %ld | %ld \n",i0,j0);
+                    //printf(" (%ld, %ld) | i0=%ld , j0=%ld \n",i,orbital_id,i0,j0);
                     size_t Jcsf = Icsf;
-                    Jcsf = Jcsf  ^ ((size_t)1 << (norb - 1 + j0));
-                    Jcsf =  Jcsf ^ ((size_t)1 << (norb - 1 + i0));
+                    Jcsf = Jcsf ^ ((size_t)1 << (j0));
+                    Jcsf = Jcsf ^ ((size_t)1 << (i0));
                     //printBits(Jcsf, nelec);
                     size_t posCSF;
                     findPositions(csfList, sizeCSF, &Jcsf, 1, &posCSF);
@@ -259,25 +274,84 @@ void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, si
                     size_t pos;
                     pos = findGlobalID(posCFG, posCSF, sizeConfig, sizeCSF);
                     igraph_vector_int_push_back(monoCFGList, pos);
-                    //printf(" pos = %ld\n",pos);
 
-                    phase = getPhase(Icsf, Jcsf, (norb-1+i0)+1, (norb-1+j0)+1);
+                    phase = getPhase(Icsf, Jcsf, (i0)+1, (j0)+1);
                     phase = phase & 1 == 1 ? -1 : 1;
-                    //if ( orbital_id > i ) {
-                    //  if( ((Jcsf >> i) & 1) == 1) phase *= -1;
-                    //}
-                    //else {
-                    //  if( ((Jcsf >> orbital_id) & 1) == 1) phase *= -1;
-                    //}
 
                     // Add the position of the new alpha determinant to the list
                     igraph_vector_push_back(monoMEs, phase);
                 }
             }
 
+            // Calculate J
+            // Loop over each connected vertex
+            for (size_t j = 0; j < igraph_vector_int_size(&orbital_id_allowed); ++j) {
+                size_t orbital_id = VECTOR(orbital_id_allowed)[j];
+                if((( (Icfg >> i ) & 1) & ((Icfg >> orbital_id) & 1)) & (i>orbital_id)) {
+                    // Find the real index
+                    size_t i0, j0;
+                    size_t mask = (((size_t)1 << (i+1)) - 1);
+                    i0 = i - popcnt ( mask ^ (mask & Icfg));
+                    mask = (((size_t)1 << (orbital_id+1))-1);
+                    j0 = orbital_id - popcnt ( mask ^ (mask & Icfg));
+                    //printf(" > \t %d %ld\n",j, orbital_id);
+                    if ( (i0 != j0) ) {
+                        // Loop over CSFs
+                        for( int l=0; l<sizeCSF; ++l ) {
+                            size_t Icsf = csfList[l];
+                            if( (( (Icsf >> i0 ) & 1) ^ ((Icsf >> j0) & 1))  ) {
+                              //printf(" %d | (%ld %ld)\n",l,i0,j0);
+                              //printBits(Icsf, nelec);
+                              size_t Jcsf = Icsf;
+                              Jcsf = Jcsf ^ ((size_t)1 << (i0));
+                              Jcsf = Jcsf ^ ((size_t)1 << (j0));
+                              //printBits(Jcsf, nelec);
+                              size_t posCSF;
+                              findPositions(csfList, sizeCSF, &Jcsf, 1, &posCSF);
+
+                              // Add the position of the new alpha determinant to the list
+                              size_t pos;
+                              pos = findGlobalID(posCFG, posCSF, sizeConfig, sizeCSF);
+                              igraph_vector_int_push_back(monoCFGList, pos);
+
+                              // Add the position of the new alpha determinant to the list
+                              igraph_vector_push_back(monoMEs, Jme);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Calculate K
+            // Check if there's K
+            size_t i0, j0;
+            size_t mask = (((size_t)1 << (i+1)) - 1);
+            i0 = i - popcnt ( mask ^ (mask & Icfg));
+            j0 = i + nelecF1;
+            if( (( (Icsf >> i0 ) & 1) ^ ((Icsf >> j0) & 1))  ) {
+              //printf(" %d | (%ld %ld)\n",l,i0,j0);
+              //printBits(Icsf, nelec);
+              size_t Jcsf = Icsf;
+              Jcsf = Jcsf ^ ((size_t)1 << (i0));
+              Jcsf = Jcsf ^ ((size_t)1 << (j0));
+              //printBits(Jcsf, nelec);
+
+              size_t posCSF;
+              findPositions(csfList, sizeCSF, &Jcsf, 1, &posCSF);
+
+              // Add the position of the new alpha determinant to the list
+              size_t pos;
+              pos = findGlobalID(posCFG, posCSF, sizeConfig, sizeCSF);
+              igraph_vector_int_push_back(monoCFGList, pos);
+
+              // Add the position of the new alpha determinant to the list
+              igraph_vector_push_back(monoMEs, Kme);
+            }
+
             igraph_vector_int_destroy(&orbital_id_allowed);
         }
     }
+
 }
 
 // Main function that calculates MEs

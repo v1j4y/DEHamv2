@@ -4,4 +4,5 @@
 
 int readGraphMLFile(FILE* file, igraph_t* graph) ;
 
+int getNumberOfConnectedVertices(const igraph_t* graph, igraph_integer_t vertex_id) ;
 void getConnectedVertices(const igraph_t* graph, igraph_integer_t vertex_id, igraph_vector_int_t* result) ;

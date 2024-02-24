@@ -43,6 +43,9 @@ int getExecDegree(size_t detI, size_t detJ) ;
 int getHoles_1ex(size_t detI, size_t detJ, size_t *holesOut) ;
 int getPart_1ex(size_t detI, size_t detJ, size_t *particlesOut) ;
 
+// Get maximum neighbors
+int getMaxNeighbors(const igraph_t* graph, size_t nsites) ;
+
 // A function to declare a matrix of given size and initialize it to 0
 double** declare_matrix(int rows, int cols) ;
 
@@ -50,4 +53,4 @@ double** declare_matrix(int rows, int cols) ;
 void save_matrix(double** matrix, int rows, int cols, char* filename) ;
 
 // Function to generate all possible alpha determinants
-void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, size_t sizeCSF, const igraph_t* graph, size_t Icfg, size_t Icsf, igraph_vector_int_t* monoCFGList, igraph_vector_t* monoMEs) ;
+void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, size_t sizeCSF, const igraph_t* graph, size_t Icfg, size_t Icsf, igraph_vector_int_t* monoCFGList, igraph_vector_t* monoMEs, double J, double K) ;

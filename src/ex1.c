@@ -67,7 +67,16 @@ int main(int argc,char **argv)
   size_t norb   = nsites*2; // Two orbitals on each site in the DE model
   size_t nelec = norb - nholes;
   size_t nbeta = nelec - nalpha;
+  size_t nelecF1 = nsites - nholes;
   int natomax = 100;
+
+  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+     Define Hamiltonian
+     - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+  double Jme =  0.01;
+  double Kme =  6.0;
+  double t = -1.0;
 
   size_t sizeCFG  = binomialCoeff(nsites, (nsites-nholes));
   size_t sizeCSF  = binomialCoeff(nelec, nalpha);
@@ -75,6 +84,10 @@ int main(int argc,char **argv)
 
   size_t* configList = malloc(sizeCFG * sizeof(size_t));
   size_t* csfList    = malloc(sizeCSF * sizeof(size_t));
+  // List for storing JK elems
+  int max_nbrs = getMaxNeighbors(&graph, nsites);
+  printf(" Max Nbrs           # = %d \n",max_nbrs);
+  size_t* csfJKList  = malloc(sizeCSF * max_nbrs * sizeof(size_t));
 
   generateConfigurations(nsites, (nsites-nholes), configList, &sizeCFG);
 
@@ -145,27 +158,111 @@ int main(int argc,char **argv)
   // Sort the lists for binary search
   qsort(csfList, sizeCSF, sizeof(size_t), compare);
   printf(" CSF           List # = %ld \n",sizeCSF);
-  for( int i=0; i<sizeCSF; ++i ) {
-    //printBits(csfList[i], nelec);
-    for( int j=i; j<sizeCSF; ++j ) {
-      //printBits(csfList[j], nelec);
-      int excDeg = getExecDegree(csfList[i], csfList[j]);
-      if (excDeg == 1) {
-        size_t holes[1];
-        size_t part[1];
-        excDeg = getHoles_1ex(csfList[i], csfList[j], holes);
-        excDeg = getPart_1ex(csfList[i], csfList[j], part);
-        size_t p=part[0];
-        size_t h=holes[0];
-        igraph_bool_t res;
-        igraph_integer_t v1, v2;
-        v1 = h+1;
-        v2 = p+1;
-        //printf(" %d %d = %d (h=%ld p=%ld) => %d\n", i, j, excDeg, v1, v2, res);
-        //igraph_are_connected(&graph, h, p, &res);
-      }
-    }
-  }
+  //for( int i=0; i<sizeCSF; ++i ) {
+  //  printf(" --- %d ---\n",i);
+  //  printBits(csfList[i], nelec);
+  //  for( int j=i; j<sizeCSF; ++j ) {
+  //    printBits(csfList[j], nelec);
+  //    int excDeg = getExecDegree(csfList[i], csfList[j]);
+  //    if (excDeg == 1) {
+  //      size_t holes[1];
+  //      size_t part[1];
+  //      excDeg = getHoles_1ex(csfList[i], csfList[j], holes);
+  //      excDeg = getPart_1ex(csfList[i], csfList[j], part);
+  //      size_t p=part[0];
+  //      size_t h=holes[0];
+  //      if( (p <= nsites && h <= nsites) || (p > nsites && h > nsites) ) {
+  //        igraph_bool_t res;
+  //        igraph_integer_t v1, v2;
+  //        v1 = ((h-1) % nsites);
+  //        v2 = ((p-1) % nsites);
+  //        igraph_are_connected(&graph, v1, v2, &res);
+  //        if (res) printf(" %d %d = %d (h=%ld p=%ld) => %d\n", i, j, excDeg, v1, v2, res);
+  //        //printf(" %d %d = %d (h=%ld p=%ld) => %d\n", i, j, excDeg, v1, v2, res);
+  //      }
+  //    }
+  //  }
+  //}
+
+  //for( int i=0; i<sizeCFG; ++i ) {
+  //  printf(" --- %d ---\n",i);
+  //  printBits(configList[i], nsites);
+  //  size_t Icfg = configList[i];
+  //  for( int j=0; j<nsites; ++j ) {
+  //    if ((Icfg >> j) & 1) {
+  //      // Get the connected vertices
+  //      igraph_vector_int_t orbital_id_allowed;
+  //      igraph_vector_int_init(&orbital_id_allowed, 0);
+  //      getConnectedVertices(&graph, (igraph_integer_t)j, &orbital_id_allowed);
+  //      printf(" > %d \n",j);
+
+  //      // Calculate J
+  //      // Loop over each connected vertex
+  //      for (size_t k = 0; k < igraph_vector_int_size(&orbital_id_allowed); ++k) {
+  //        size_t orbital_id = VECTOR(orbital_id_allowed)[k];
+  //        if((( (Icfg >> j ) & 1) & ((Icfg >> orbital_id) & 1)) & (j>orbital_id)) {
+  //          // Find the real index
+  //          size_t i0, j0;
+  //          size_t mask = (((size_t)1 << (j+1)) - 1);
+  //          i0 = j - popcnt ( mask ^ (mask & Icfg));
+  //          mask = (((size_t)1 << (orbital_id+1))-1);
+  //          j0 = orbital_id - popcnt ( mask ^ (mask & Icfg));
+  //          //printf(" > \t %d %ld\n",j, orbital_id);
+  //          if ( (i0 != j0) ) {
+  //            // Loop over CSFs
+  //            for( int l=0; l<sizeCSF; ++l ) {
+  //              size_t Icsf = csfList[l];
+  //              if( (( (Icsf >> i0 ) & 1) ^ ((Icsf >> j0) & 1))  ) {
+  //                //printf(" %d | (%ld %ld)\n",l,i0,j0);
+  //                //printBits(Icsf, nelec);
+  //                size_t Jcsf = Icsf;
+  //                Jcsf = Jcsf ^ ((size_t)1 << (i0));
+  //                Jcsf = Jcsf ^ ((size_t)1 << (j0));
+  //                //printBits(Jcsf, nelec);
+  //              }
+  //            }
+  //          }
+
+  //        }
+  //      }
+
+  //      // Calculate K
+  //      // Check if there's K
+  //      for( int l=0; l<sizeCSF; ++l ) {
+  //        size_t Icsf = csfList[l];
+  //        size_t i0, j0;
+  //        size_t mask = (((size_t)1 << (j+1)) - 1);
+  //        i0 = j - popcnt ( mask ^ (mask & Icfg));
+  //        j0 = j + nelecF1;
+  //        if( (( (Icsf >> i0 ) & 1) ^ ((Icsf >> j0) & 1))  ) {
+  //          printf(" %d | (%ld %ld)\n",l,i0,j0);
+  //          printBits(Icsf, nelec);
+  //          size_t Jcsf = Icsf;
+  //          Jcsf = Jcsf ^ ((size_t)1 << (i0));
+  //          Jcsf = Jcsf ^ ((size_t)1 << (j0));
+  //          printBits(Jcsf, nelec);
+  //        }
+  //      }
+  //    }
+  //  }
+  //}
+
+  //for( int i=0; i<sizeCSF; ++i ) {
+  //  printf("\n --- %d ---\n",i);
+  //  printBits(csfList[i], nelec);
+  //  size_t Icsf = csfList[i];
+  //  for( int j=0; j<nsites; ++j ) {
+
+  //    size_t orbital_id = j + nelecF1;
+  //    printf(" > \t %d %ld\n",j, orbital_id);
+  //    if((( (Icsf >> j ) & 1) ^ ((Icsf >> orbital_id) & 1))) {
+  //      size_t Jcsf = Icsf;
+  //      Jcsf = Jcsf ^ ((size_t)1 << (j));
+  //      Jcsf = Jcsf ^ ((size_t)1 << (orbital_id));
+  //      printBits(Jcsf, nelec);
+  //    }
+  //  }
+  //}
 
   printf(" Ne=%ld Na=%ld Nb=%ld \n", nelec, nalpha, nbeta);
 
@@ -173,10 +270,12 @@ int main(int argc,char **argv)
   size_t icfg[1];
   size_t icsf[1];
   size_t iglobalid;
-  icfg[0] = 11;
-  icsf[0] = 15 - 8 + 16;
-  icfg[0] = configList[4];
-  icsf[0] = csfList[22];
+  //icfg[0] = 11;
+  //icsf[0] = 15 - 8 + 16;
+  //icfg[0] = configList[4];
+  //icsf[0] = csfList[22];
+  icfg[0] = configList[1];
+  icsf[0] = csfList[1];
   size_t icfgid;
   size_t icsfid;
 
@@ -192,7 +291,7 @@ int main(int argc,char **argv)
   igraph_vector_int_init(&monoCFGList, 0);
   igraph_vector_t monoMEs;
   igraph_vector_init(&monoMEs, 0);
-  generateMonoCFGs(configList, sizeCFG, csfList, sizeCSF, &graph, icfg[0], icsf[0], &monoCFGList, &monoMEs);
+  generateMonoCFGs(configList, sizeCFG, csfList, sizeCSF, &graph, icfg[0], icsf[0], &monoCFGList, &monoMEs, Jme, Kme);
   printf(" Final ----- \n");
   for( int i=0; i<igraph_vector_int_size(&monoCFGList); ++i ) {
     printf(" %d >> %f \n",i, VECTOR(monoMEs)[i]);
@@ -207,14 +306,6 @@ int main(int argc,char **argv)
   //int rows = sizeAlpha * sizeBeta;
   //int cols = rows;
   //double** matrix = declare_matrix(rows, cols);
-
-  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-     Define Hamiltonian
-     - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-  double J =  0.01;
-  double K =  6.0;
-  double t = -1.0;
 
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
      Compute the operator matrix that defines the eigensystem, Ax=kx
