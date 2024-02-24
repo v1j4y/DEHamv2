@@ -297,26 +297,23 @@ void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, si
                     //printf(" > \t %d %ld\n",j, orbital_id);
                     if ( (i0 != j0) ) {
                         // Loop over CSFs
-                        for( int l=0; l<sizeCSF; ++l ) {
-                            size_t Icsf = csfList[l];
-                            if( (( (Icsf >> i0 ) & 1) ^ ((Icsf >> j0) & 1))  ) {
-                              //printf(" %d | (%ld %ld)\n",l,i0,j0);
-                              //printBits(Icsf, nelec);
-                              size_t Jcsf = Icsf;
-                              Jcsf = Jcsf ^ ((size_t)1 << (i0));
-                              Jcsf = Jcsf ^ ((size_t)1 << (j0));
-                              //printBits(Jcsf, nelec);
-                              size_t posCSF;
-                              findPositions(csfList, sizeCSF, &Jcsf, 1, &posCSF);
+                        if( (( (Icsf >> i0 ) & 1) ^ ((Icsf >> j0) & 1))  ) {
+                          //printf(" %d | (%ld %ld)\n",l,i0,j0);
+                          //printBits(Icsf, nelec);
+                          size_t Jcsf = Icsf;
+                          Jcsf = Jcsf ^ ((size_t)1 << (i0));
+                          Jcsf = Jcsf ^ ((size_t)1 << (j0));
+                          //printBits(Jcsf, nelec);
+                          size_t posCSF;
+                          findPositions(csfList, sizeCSF, &Jcsf, 1, &posCSF);
 
-                              // Add the position of the new alpha determinant to the list
-                              size_t pos;
-                              pos = findGlobalID(posCFG, posCSF, sizeConfig, sizeCSF);
-                              igraph_vector_int_push_back(monoCFGList, pos);
+                          // Add the position of the new alpha determinant to the list
+                          size_t pos;
+                          pos = findGlobalID(posCFG, posCSF, sizeConfig, sizeCSF);
+                          igraph_vector_int_push_back(monoCFGList, pos);
 
-                              // Add the position of the new alpha determinant to the list
-                              igraph_vector_push_back(monoMEs, Jme);
-                            }
+                          // Add the position of the new alpha determinant to the list
+                          igraph_vector_push_back(monoMEs, Jme);
                         }
                     }
                 }

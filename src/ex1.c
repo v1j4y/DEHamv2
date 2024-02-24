@@ -264,6 +264,11 @@ int main(int argc,char **argv)
   //  }
   //}
 
+  // Declare a matrix of size 3 x 4
+  int rows = sizeTotal;
+  int cols = rows;
+  double** matrix = declare_matrix(rows, cols);
+
   printf(" Ne=%ld Na=%ld Nb=%ld \n", nelec, nalpha, nbeta);
 
   // Get the global address of a CFGxCSF pair.
@@ -294,18 +299,44 @@ int main(int argc,char **argv)
   generateMonoCFGs(configList, sizeCFG, csfList, sizeCSF, &graph, icfg[0], icsf[0], &monoCFGList, &monoMEs, Jme, Kme);
   printf(" Final ----- \n");
   for( int i=0; i<igraph_vector_int_size(&monoCFGList); ++i ) {
-    printf(" %d >> %f \n",i, VECTOR(monoMEs)[i]);
+    printf(" %d >> %ld, %f \n",i, VECTOR(monoCFGList)[i], VECTOR(monoMEs)[i]);
     iglobalid = VECTOR(monoCFGList)[i];
     icfgid = findCFGID(iglobalid, sizeCFG, sizeCSF);
     icsfid = findCSFID(iglobalid, sizeCFG, sizeCSF);
     printBits(configList[icfgid], nsites);
     printBits(csfList[icsfid], nelec);
   }
+  igraph_vector_int_destroy(&monoCFGList);
+  igraph_vector_destroy(&monoMEs);
 
-  // Declare a matrix of size 3 x 4
-  //int rows = sizeAlpha * sizeBeta;
-  //int cols = rows;
-  //double** matrix = declare_matrix(rows, cols);
+  for( int j=0; j<sizeCFG; ++j ) {
+    icfg[0] = configList[j];
+    for( int k=0; k<sizeCSF; ++k ) {
+      icsf[0] = csfList[k];
+      size_t posi = findGlobalID(j, k, sizeCFG, sizeCSF);
+      igraph_vector_int_t monoCFGList;
+      igraph_vector_int_init(&monoCFGList, 0);
+      igraph_vector_t monoMEs;
+      igraph_vector_init(&monoMEs, 0);
+      generateMonoCFGs(configList, sizeCFG, csfList, sizeCSF, &graph, icfg[0], icsf[0], &monoCFGList, &monoMEs, Jme, Kme);
+      printf(" posi=%ld \n",posi);
+      for( int i=0; i<igraph_vector_int_size(&monoCFGList); ++i ) {
+        iglobalid = VECTOR(monoCFGList)[i];
+        icfgid = findCFGID(iglobalid, sizeCFG, sizeCSF);
+        icsfid = findCSFID(iglobalid, sizeCFG, sizeCSF);
+        size_t posj = VECTOR(monoCFGList)[i];
+        double val  = VECTOR(monoMEs)[i];
+        matrix[posi][posj] = val;
+        printf("(%ld, %ld) = %f\n",posi, posj, val);
+      }
+
+      igraph_vector_int_destroy(&monoCFGList);
+      igraph_vector_destroy(&monoMEs);
+    }
+  }
+
+  // Save file
+  save_matrix(matrix, rows, cols, "/tmp/4x4_de.csv");
 
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
      Compute the operator matrix that defines the eigensystem, Ax=kx
