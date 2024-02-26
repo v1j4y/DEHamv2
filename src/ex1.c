@@ -74,8 +74,8 @@ int main(int argc,char **argv)
      Define Hamiltonian
      - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-  double Jme =  0.01;
-  double Kme =  6.0;
+  double Jme =  0.064;
+  double Kme = -0.8;
   double t = -1.0;
 
   size_t sizeCFG  = binomialCoeff(nsites, (nsites-nholes));
@@ -94,11 +94,17 @@ int main(int argc,char **argv)
   // Sort the lists for binary search
   qsort(configList, sizeCFG, sizeof(size_t), compare);
   printf(" Configuration List # = %ld \n",sizeCFG);
-  for( int i=0; i<sizeCFG; ++i ) {
-    printBits(configList[i], nsites);
-  }
+  //for( int i=0; i<sizeCFG; ++i ) {
+  //  printBits(configList[i], nsites);
+  //}
 
   generateConfigurations(nelec, nalpha, csfList, &sizeCSF);
+  // Sort the lists for binary search
+  qsort(csfList, sizeCSF, sizeof(size_t), compare);
+  printf(" CSF           List # = %ld \n",sizeCSF);
+  //for( int i=0; i<sizeCSF; ++i ) {
+  //  printBits(csfList[i], nelec);
+  //}
 
   /* Note on ordering of determinants
    * =================================
@@ -154,17 +160,12 @@ int main(int argc,char **argv)
    *
     */
 
-
-  // Sort the lists for binary search
-  qsort(csfList, sizeCSF, sizeof(size_t), compare);
-  printf(" CSF           List # = %ld \n",sizeCSF);
-
   // Declare a matrix of size 3 x 4
-  int rows = sizeTotal;
-  int cols = rows;
-  double** matrix = declare_matrix(rows, cols);
+  //int rows = sizeTotal;
+  //int cols = rows;
+  //double** matrix = declare_matrix(rows, cols);
 
-  printf(" Ne=%ld Na=%ld Nb=%ld \n", nelec, nalpha, nbeta);
+  //printf(" Ne=%ld Na=%ld Nb=%ld \n", nelec, nalpha, nbeta);
 
   //for( int j=0; j<sizeCFG; ++j ) {
   //  size_t icfg[1];
@@ -211,6 +212,8 @@ int main(int argc,char **argv)
   //PetscCall(MatSetSizes(A,PETSC_DECIDE,PETSC_DECIDE,n,n));
   PetscCall(MatSetType ( A, MATSBAIJ));
   PetscCall(MatMPIBAIJSetPreallocation(A,1,n,NULL,n,NULL));
+  //PetscViewer viewer; // declare a viewer object
+  //PetscViewerASCIIGetStdout(PETSC_COMM_WORLD, &viewer); // get the standard output
 
   /*
    * Initialize Hamiltonian
@@ -231,15 +234,15 @@ int main(int argc,char **argv)
     icfg[0] = configList[cfgid];
     icsf[0] = csfList[csfid];
 
-    generateMonoCFGs(configList, sizeCFG, csfList, sizeCSF, &graph, posi, icfg[0], icsf[0], &monoCFGList, &monoMEs, Jme, Kme);
+    generateMonoCFGs(configList, sizeCFG, csfList, sizeCSF, &graph, posi, icfg[0], icsf[0], &monoCFGList, &monoMEs, t, Jme, Kme);
     //printf(" posi=%ld \n",i);
     for (int j = 0; j < igraph_vector_int_size(&monoCFGList); ++j) {
       PetscInt Jid = VECTOR(monoCFGList)[j];
       PetscReal val = VECTOR(monoMEs)[j];
-      PetscCall(MatSetValue(A,Jid,i,(PetscReal)val,ADD_VALUES));
-      //if( i >= Jid ) PetscCall(MatSetValue(A,Jid,i,t*(PetscReal)val,ADD_VALUES));
-      //else          PetscCall(MatSetValue(A,i,Jid,t*(PetscReal)val,ADD_VALUES));
-      matrix[posi][Jid] += val;
+      //PetscCall(MatSetValue(A,Jid,i,(PetscReal)val,ADD_VALUES));
+      if( i > Jid ) PetscCall(MatSetValue(A,Jid,i,(PetscReal)val,INSERT_VALUES));
+      else          PetscCall(MatSetValue(A,i,Jid,(PetscReal)val,INSERT_VALUES));
+      //matrix[posi][Jid] += val;
       //printf("(%ld, %ld) = %f\n",posi, Jid, val);
     }
 
@@ -262,7 +265,7 @@ int main(int argc,char **argv)
   PetscCall(MatCreateVecs(A,NULL,&vs2));
 
   // Save file
-  save_matrix(matrix, rows, cols, "/tmp/4x4_de.csv");
+  //save_matrix(matrix, rows, cols, "/tmp/4x4_de.csv");
 
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                 Create the eigensolver and set various options
