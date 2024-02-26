@@ -214,7 +214,7 @@ void save_matrix(double** matrix, int rows, int cols, char* filename) {
 }
 
 // Function to generate all possible alpha determinants
-void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, size_t sizeCSF, const igraph_t* graph, size_t Icfg, size_t Icsf, igraph_vector_int_t* monoCFGList, igraph_vector_t* monoMEs, double Jme, double Kme) {
+void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, size_t sizeCSF, const igraph_t* graph, size_t ipos, size_t Icfg, size_t Icsf, igraph_vector_int_t* monoCFGList, igraph_vector_t* monoMEs, double Jme, double Kme) {
     // Get the number of orbitals
     size_t norb = igraph_vcount(graph);
     size_t nholes = norb - popcnt ( Icfg );
@@ -314,6 +314,12 @@ void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, si
 
                           // Add the position of the new alpha determinant to the list
                           igraph_vector_push_back(monoMEs, Jme);
+
+                          // Add the diagonal element
+                          igraph_vector_int_push_back(monoCFGList, ipos);
+
+                          // Add the position of the new alpha determinant to the list
+                          igraph_vector_push_back(monoMEs, -1.0*Jme);
                         }
                     }
                 }

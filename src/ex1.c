@@ -167,33 +167,32 @@ int main(int argc,char **argv)
   printf(" Ne=%ld Na=%ld Nb=%ld \n", nelec, nalpha, nbeta);
 
   //for( int j=0; j<sizeCFG; ++j ) {
+  //  size_t icfg[1];
   //  icfg[0] = configList[j];
   //  for( int k=0; k<sizeCSF; ++k ) {
+  //    size_t icsf[1];
   //    icsf[0] = csfList[k];
   //    size_t posi = findGlobalID(j, k, sizeCFG, sizeCSF);
   //    igraph_vector_int_t monoCFGList;
   //    igraph_vector_int_init(&monoCFGList, 0);
   //    igraph_vector_t monoMEs;
   //    igraph_vector_init(&monoMEs, 0);
-  //    generateMonoCFGs(configList, sizeCFG, csfList, sizeCSF, &graph, icfg[0], icsf[0], &monoCFGList, &monoMEs, Jme, Kme);
-  //    printf(" posi=%ld \n",posi);
+  //    generateMonoCFGs(configList, sizeCFG, csfList, sizeCSF, &graph, posi, icfg[0], icsf[0], &monoCFGList, &monoMEs, Jme, Kme);
+  //    //printf(" posi=%ld \n",posi);
   //    for( int i=0; i<igraph_vector_int_size(&monoCFGList); ++i ) {
-  //      iglobalid = VECTOR(monoCFGList)[i];
-  //      icfgid = findCFGID(iglobalid, sizeCFG, sizeCSF);
-  //      icsfid = findCSFID(iglobalid, sizeCFG, sizeCSF);
+  //      //size_t iglobalid = VECTOR(monoCFGList)[i];
+  //      //size_t icfgid = findCFGID(iglobalid, sizeCFG, sizeCSF);
+  //      //size_t icsfid = findCSFID(iglobalid, sizeCFG, sizeCSF);
   //      size_t posj = VECTOR(monoCFGList)[i];
   //      double val  = VECTOR(monoMEs)[i];
-  //      matrix[posi][posj] = val;
-  //      printf("(%ld, %ld) = %f\n",posi, posj, val);
+  //      //matrix[posi][posj] += val;
+  //      //printf("(%ld, %ld) = %f\n",posi, posj, val);
   //    }
 
   //    igraph_vector_int_destroy(&monoCFGList);
   //    igraph_vector_destroy(&monoMEs);
   //  }
   //}
-
-  // Save file
-  //save_matrix(matrix, rows, cols, "/tmp/4x4_de.csv");
 
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
      Compute the operator matrix that defines the eigensystem, Ax=kx
@@ -216,27 +215,32 @@ int main(int argc,char **argv)
   /*
    * Initialize Hamiltonian
     */
+  size_t icfg[1];
+  size_t icsf[1];
+  size_t cfgid, csfid;
   PetscCall(MatGetOwnershipRange(A,&Istart,&Iend));
   for (i=Istart;i<Iend;i++) {
-
-    size_t cfgid = findCFGID(i, sizeCFG, sizeCSF);
-    size_t csfid = findCFGID(i, sizeCFG, sizeCSF);
-    size_t icfg[1];
-    size_t icsf[1];
-    icfg[0] = configList[cfgid];
-    icsf[0] = csfList[csfid];
 
     igraph_vector_int_t monoCFGList;
     igraph_vector_int_init(&monoCFGList, 0);
     igraph_vector_t monoMEs;
     igraph_vector_init(&monoMEs, 0);
+    size_t posi = i;
+    cfgid = findCFGID(posi, sizeCFG, sizeCSF);
+    csfid = findCSFID(posi, sizeCFG, sizeCSF);
+    icfg[0] = configList[cfgid];
+    icsf[0] = csfList[csfid];
 
-    generateMonoCFGs(configList, sizeCFG, csfList, sizeCSF, &graph, icfg[0], icsf[0], &monoCFGList, &monoMEs, Jme, Kme);
+    generateMonoCFGs(configList, sizeCFG, csfList, sizeCSF, &graph, posi, icfg[0], icsf[0], &monoCFGList, &monoMEs, Jme, Kme);
+    //printf(" posi=%ld \n",i);
     for (int j = 0; j < igraph_vector_int_size(&monoCFGList); ++j) {
       PetscInt Jid = VECTOR(monoCFGList)[j];
       PetscReal val = VECTOR(monoMEs)[j];
-      if( i > Jid ) PetscCall(MatSetValue(A,Jid,i,t*(PetscReal)val,INSERT_VALUES));
-      else          PetscCall(MatSetValue(A,i,Jid,t*(PetscReal)val,INSERT_VALUES));
+      PetscCall(MatSetValue(A,Jid,i,(PetscReal)val,ADD_VALUES));
+      //if( i >= Jid ) PetscCall(MatSetValue(A,Jid,i,t*(PetscReal)val,ADD_VALUES));
+      //else          PetscCall(MatSetValue(A,i,Jid,t*(PetscReal)val,ADD_VALUES));
+      matrix[posi][Jid] += val;
+      //printf("(%ld, %ld) = %f\n",posi, Jid, val);
     }
 
     igraph_vector_int_destroy(&monoCFGList);
@@ -256,6 +260,9 @@ int main(int argc,char **argv)
   PetscCall(MatCreateVecs(A,NULL,&xr));
   PetscCall(MatCreateVecs(A,NULL,&xi));
   PetscCall(MatCreateVecs(A,NULL,&vs2));
+
+  // Save file
+  save_matrix(matrix, rows, cols, "/tmp/4x4_de.csv");
 
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                 Create the eigensolver and set various options
