@@ -23,6 +23,14 @@ void printBits(size_t num, size_t len) {
     printf("\n");
 }
 
+void printBitsDE(size_t num, size_t len, size_t nelecF1) {
+    for (int bit = len - 1; bit >= 0; --bit) {
+        printf("%ld", (num >> bit) & 1);
+        if(bit==(nelecF1)) printf("\n");
+    }
+    printf("\n");
+}
+
 void generateConfigurations(size_t norb, size_t nelec, size_t* configAll, size_t* size) {
     *size = 0;
 

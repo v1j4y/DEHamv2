@@ -74,7 +74,7 @@ int main(int argc,char **argv)
      Define Hamiltonian
      - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-  double Jme =  0.064;
+  double Jme =  0.030;
   double Kme = -0.8;
   double t = -1.0;
 
@@ -233,6 +233,8 @@ int main(int argc,char **argv)
     csfid = findCSFID(posi, sizeCFG, sizeCSF);
     icfg[0] = configList[cfgid];
     icsf[0] = csfList[csfid];
+    //printBits(icfg[0], nsites);
+    //printBitsDE(icsf[0], nelec, nelecF1);
 
     generateMonoCFGs(configList, sizeCFG, csfList, sizeCSF, &graph, posi, icfg[0], icsf[0], &monoCFGList, &monoMEs, t, Jme, Kme);
     //printf(" posi=%ld \n",i);

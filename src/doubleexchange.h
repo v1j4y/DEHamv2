@@ -12,7 +12,7 @@ size_t get_matelem(size_t deti, size_t detj) ;
 
 void printBits(size_t num, size_t len) ;
 
-void printBits(size_t num, size_t len) ;
+void printBitsDE(size_t num, size_t len, size_t nelecF1) ;
 
 void generateConfigurations(size_t norb, size_t nelec, size_t* configAll, size_t* size) ;
 
