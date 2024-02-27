@@ -86,14 +86,14 @@ int main(int argc,char **argv)
   size_t* csfList    = malloc(sizeCSF * sizeof(size_t));
   // List for storing JK elems
   int max_nbrs = getMaxNeighbors(&graph, nsites);
-  printf(" Max Nbrs           # = %d \n",max_nbrs);
+  //printf(" Max Nbrs           # = %d \n",max_nbrs);
   size_t* csfJKList  = malloc(sizeCSF * max_nbrs * sizeof(size_t));
 
   generateConfigurations(nsites, (nsites-nholes), configList, &sizeCFG);
 
   // Sort the lists for binary search
   qsort(configList, sizeCFG, sizeof(size_t), compare);
-  printf(" Configuration List # = %ld \n",sizeCFG);
+  //printf(" Configuration List # = %ld \n",sizeCFG);
   //for( int i=0; i<sizeCFG; ++i ) {
   //  printBits(configList[i], nsites);
   //}
@@ -101,7 +101,7 @@ int main(int argc,char **argv)
   generateConfigurations(nelec, nalpha, csfList, &sizeCSF);
   // Sort the lists for binary search
   qsort(csfList, sizeCSF, sizeof(size_t), compare);
-  printf(" CSF           List # = %ld \n",sizeCSF);
+  //printf(" CSF           List # = %ld \n",sizeCSF);
   //for( int i=0; i<sizeCSF; ++i ) {
   //  printBits(csfList[i], nelec);
   //}
@@ -206,14 +206,20 @@ int main(int argc,char **argv)
   PetscCall(PetscPrintf(PETSC_COMM_WORLD,"====================================================="));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD,"\nDEHamv2: Double Exchange Eigenproblem, n=%" PetscInt_FMT "\n",n));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD,"=====================================================\n\n"));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] Max Nbrs   \t\t %" PetscInt_FMT "\n",(size_t)max_nbrs));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] N(configurations)   \t %" PetscInt_FMT "\n",sizeCFG));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] N(CSFs)   \t\t %" PetscInt_FMT "\n",sizeCSF));
   // Symmetric Matrix
   PetscCall(MatCreate(PETSC_COMM_WORLD,&A));
-  PetscCall(MatCreateSBAIJ(PETSC_COMM_WORLD,1,PETSC_DECIDE,PETSC_DECIDE,n,n,n,NULL,n,NULL,&A));
+  PetscCall(MatCreateSBAIJ(PETSC_COMM_WORLD,1,PETSC_DECIDE,PETSC_DECIDE,n,n,max_nbrs*nsites,NULL,max_nbrs*nsites,NULL,&A));
   //PetscCall(MatSetSizes(A,PETSC_DECIDE,PETSC_DECIDE,n,n));
   PetscCall(MatSetType ( A, MATSBAIJ));
-  PetscCall(MatMPIBAIJSetPreallocation(A,1,n,NULL,n,NULL));
+  PetscCall(MatMPIBAIJSetPreallocation(A,1,max_nbrs*nsites,NULL,max_nbrs*nsites,NULL));
   //PetscViewer viewer; // declare a viewer object
   //PetscViewerASCIIGetStdout(PETSC_COMM_WORLD, &viewer); // get the standard output
+
+  PetscCall(PetscTime(&tt1));
+
 
   /*
    * Initialize Hamiltonian
