@@ -1,14 +1,14 @@
 [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.20450.svg)](http://dx.doi.org/10.5281/zenodo.20450)
 
-# HubHam
+# DEHam (version 2.0)
 
-Hubbard Hamiltonian 
-===================
+Double Exchange Hamiltonian: Complete Version
+=============================================
 
 (under GNU GENERAL PUBLIC LICENSE v2)
 
 This program can perform Exact diagonalization calculations of various types of
-model Hamiltonians. It is especially optimized for the Hubbard Hamiltonian
+model Hamiltonians. It is especially optimized for the t-J (or Double Exchange)
 type model Hamiltonians. The core feature which the program is specialized for
 is the adressing of determinant in an efficient manner to quickly construct the
 Hamiltonian non-zero matrix-elements. Once the Hamiltonian is constructed in 
@@ -58,15 +58,15 @@ make install
 ```
 
 
-_Using HubHam_
+_Using DEHamv2_
 ---------------
 
-  1. The HubHam program requires an input file which 
+  1. The DEHamv2 program requires an input file which 
    has is in the `graphml` format. A few sample files
    have been provided in the `data/` directory.
 
 
-  2. running HubHam
+  2. running DEHam
 
 ```shell
 mpiexec -n [nprocs] ./bin/ex1 -eps_nev 10 -f data/c8h8_mma.graphml 
