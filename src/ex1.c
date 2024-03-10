@@ -37,21 +37,30 @@ int main(int argc,char **argv)
   PetscCall(PetscOptionsGetString(NULL, NULL, "-f", graphmlFileName, sizeof(graphmlFileName), &flg));
   PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate graphml file with the -f option");
   FILE* graphmlFile = fopen(graphmlFileName, "r");
+  if (graphmlFile == NULL) {
+    fprintf(stderr, "Error opening the file.\n");
+    return 1;  // Return an error code or use another error handling method.
+  }
 
   /*
     Enter the options for the number of holes and
     the total number of alpha electrons.
   */
-  size_t nholes;
-  size_t nalpha;
+  PetscInt  nholes;
+  PetscInt  nalpha;
+  PetscReal t_inp = -1.0;
+  PetscReal Jme_inp =  0.030;
+  PetscReal Kme_inp = -0.0;
   PetscCall(PetscOptionsGetInt(NULL,NULL,"-nh",&nholes,NULL));
   PetscCheck(nholes, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate the number of holes with the -nh option");
   PetscCall(PetscOptionsGetInt(NULL,NULL,"-na",&nalpha,NULL));
   PetscCheck(nalpha, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate the number of alpha e- with the -na option");
-  if (graphmlFile == NULL) {
-    fprintf(stderr, "Error opening the file.\n");
-    return 1;  // Return an error code or use another error handling method.
-  }
+  PetscCall(PetscOptionsGetReal(NULL,NULL,"-ht",&t_inp,&flg));
+  PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate t with the -ht option");
+  PetscCall(PetscOptionsGetReal(NULL,NULL,"-hj",&Jme_inp,&flg));
+  PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate J with the -hj option");
+  PetscCall(PetscOptionsGetReal(NULL,NULL,"-hk",&Kme_inp,&flg));
+  PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate K with the -hk option");
 
   igraph_t graph;
   igraph_empty(&graph, 0, IGRAPH_DIRECTED);
@@ -74,9 +83,12 @@ int main(int argc,char **argv)
      Define Hamiltonian
      - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-  double Jme =  0.030;
-  double Kme = -0.8;
-  double t = -1.0;
+  //double Jme =  0.030;
+  //double Kme = -0.8;
+  //double t = -1.0;
+  double Jme = Jme_inp;
+  double Kme = Kme_inp;
+  double t = t_inp;
 
   size_t sizeCFG  = binomialCoeff(nsites, (nsites-nholes));
   size_t sizeCSF  = binomialCoeff(nelec, nalpha);
@@ -161,8 +173,8 @@ int main(int argc,char **argv)
     */
 
   // Declare a matrix of size 3 x 4
-  //int rows = sizeTotal;
-  //int cols = rows;
+  int rows = sizeTotal;
+  int cols = rows;
   //double** matrix = declare_matrix(rows, cols);
 
   //printf(" Ne=%ld Na=%ld Nb=%ld \n", nelec, nalpha, nbeta);
