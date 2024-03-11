@@ -1,6 +1,11 @@
 #include "doubleexchange.h"
 #include "readgraphmllib.h"
 
+double solveQuad(double a, double b, double c) {
+  double root1 = (-b + sqrt(b*b-4.*a*c) ) / (2.*a);
+  return(root1);
+}
+
 size_t get_matelem(size_t deti, size_t detj) {
   exc_number_t exij;
   determinant_t d1[1];
@@ -374,47 +379,108 @@ void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, si
     igraph_vector_push_back(monoMEs, Jmetot + Kmetot);
 }
 
-// Main function that calculates MEs
-//void getAllDoubleExchangeMEs(size_t Idet, igraph_vector_t* MElist, igraph_vector_t* Jdetlist, size_t *configCFG, size_t sizeCFG, size_t *configCSF, size_t sizeCSF, const igraph_t* graph) {
-//    int phaseAlpha;
-//    int phaseBeta;
-//    //Find alpha and beta ids
-//    size_t cfgID = findCFGID(Idet, sizeCFG, sizeCSF);
-//    size_t csfID = findCSFID(Idet, sizeCFG, sizeCSF);
-//
-//    // Find allowed excitations
-//    igraph_vector_t alphaDeterminants;
-//    igraph_vector_init(&alphaDeterminants, 0);
-//    igraph_vector_t alphaMEs;
-//    igraph_vector_init(&alphaMEs, 0);
-//    generateDeterminants(configAlpha, sizeAlpha, graph, configAlpha[alphaID], configBeta[betaID], &alphaDeterminants, &alphaMEs, 1);
-//    igraph_vector_t betaDeterminants;
-//    igraph_vector_init(&betaDeterminants, 0);
-//    igraph_vector_t betaMEs;
-//    igraph_vector_init(&betaMEs, 0);
-//    generateDeterminants(configBeta, sizeBeta, graph, configBeta[betaID], configAlpha[alphaID], &betaDeterminants, &betaMEs, 0);
-//
-//    for (size_t j = 0; j < igraph_vector_size(&alphaDeterminants); ++j) {
-//        size_t alphaJ = VECTOR(alphaDeterminants)[j];
-//        phaseAlpha = VECTOR(alphaMEs)[j];
-//
-//        size_t foundGlobalID = findGlobalID(alphaJ, betaID, sizeAlpha);
-//
-//        igraph_vector_push_back(Jdetlist, foundGlobalID);
-//        igraph_vector_push_back(MElist, phaseAlpha);
-//    }
-//    for (size_t k = 0; k < igraph_vector_size(&betaDeterminants); ++k) {
-//
-//        size_t betaK = VECTOR(betaDeterminants)[k];
-//        phaseBeta = VECTOR(betaMEs)[k];
-//
-//        size_t foundGlobalID = findGlobalID(alphaID, betaK, sizeAlpha);
-//
-//        igraph_vector_push_back(Jdetlist, foundGlobalID);
-//        igraph_vector_push_back(MElist, phaseBeta);
-//    }
-//    igraph_vector_destroy(&alphaDeterminants);
-//    igraph_vector_destroy(&alphaMEs);
-//    igraph_vector_destroy(&betaDeterminants);
-//    igraph_vector_destroy(&betaMEs);
-//}
+void getdet(long int Icsf, int *ideter, size_t* configAlpha, long int sizeAlpha, int norb) {
+    //Find alpha and beta ids
+    size_t alphadet = configAlpha[Icsf];
+    size_t maskI = ~((size_t)1 << (norb));
+    size_t betadet = alphadet ^ maskI;
+    
+    int occv[4] = {3,1,2,4};
+    int occ = 0;
+    for( int i=0;i<norb; ++i ) {
+      occ = 0;
+      if((alphadet & (1<<i)) != 0 ) {
+        occ = 1;
+      }
+      //printf(" (%d) ",(alphadet & (1<<i))==0);
+      if((betadet & (1<<i)) != 0) {
+        if(occ == 1) occ = 3;
+        else occ = 2;
+      }
+      //printf("%d \n",betadet & (1<<i));
+      ideter[i] = occv[occ];
+    }
+}
+
+void adr (int *ideter, long int *iii, size_t* configAlpha, long int sizeAlpha, int norb) {
+    int occ = 0;
+    size_t alphadet = 0;
+    size_t betadet = 0;
+    for( int i=0;i<norb; ++i ) {
+      occ = ideter[i];
+      switch (occ)
+      {
+        case 3:
+          break;
+        case 1:
+          alphadet = alphadet | (1 << i);
+          break;
+        case 2:
+          betadet = betadet | (1 << i);
+          break;
+        case 4:
+          alphadet = alphadet | (1 << i);
+          betadet = betadet | (1 << i);
+          break;
+      }
+    }
+    size_t posa;
+    findPositions(configAlpha, sizeAlpha, &alphadet, 1, &posa);
+    iii[0] = posa;
+}
+
+// Main function that generates S2 operator
+void getS2Operator(size_t Icsf, igraph_vector_t* MElist, igraph_vector_int_t* Jdetlist, size_t *configAlpha, size_t sizeAlpha, const igraph_t* graph, int natom, int natomax) {
+    int phaseAlpha;
+    int phaseBeta;
+    int ideter[natomax];
+    int ideter2[natomax];
+    int kko, kok, kkio;
+    int iiii, iii, ii;
+    size_t iaa2;
+    double xmat = 0.0;
+    //Find alpha and beta ids
+    size_t alphadet = configAlpha[Icsf];
+    size_t maskI = ~((size_t)1 << (natom));
+    size_t betadet = alphadet ^ maskI;
+
+    getdet (Icsf, ideter, configAlpha, sizeAlpha, natom);
+
+    for( kko = 0; kko < natom; ++kko ) {
+        if(ideter[kko] != 4 && ideter[kko] != 3) xmat=xmat+(3.0/4.0);
+        for( kok = kko + 1; kok < natom; ++kok ) {
+            if(ideter[kko] == 1 && ideter[kok] == 1){
+                xmat=xmat+(1.0/2.0);
+            }
+            if(ideter[kko] == 2 && ideter[kok] == 2){
+                xmat=xmat+(1.0/2.0);
+            }
+            if(ideter[kko] == 1 && ideter[kok] == 2){
+                xmat=xmat-(1.0/2.0);
+                for(kkio=0;kkio<=natom-1;kkio++){
+                    ideter2[kkio]=ideter[kkio];
+                }
+                ideter2[kko]=2;
+                ideter2[kok]=1;
+                adr (ideter2, &iaa2,
+                     configAlpha, sizeAlpha, natom);
+                igraph_vector_int_push_back(Jdetlist, iaa2);
+                igraph_vector_push_back(MElist, 1.0);
+            }
+            if(ideter[kko] == 2 && ideter[kok] == 1){
+                xmat=xmat-(1.0/2.0);
+                for(kkio=0;kkio<=natom-1;kkio++){
+                    ideter2[kkio]=ideter[kkio];
+                }
+                ideter2[kko]=1;
+                ideter2[kok]=2;
+                adr (ideter2, &iaa2,
+                     configAlpha, sizeAlpha, natom);
+                igraph_vector_int_push_back(Jdetlist, iaa2);
+                igraph_vector_push_back(MElist, 1.0);
+            }
+        }
+    }
+    igraph_vector_int_push_back(Jdetlist, Icsf);
+    igraph_vector_push_back(MElist, xmat);
+}

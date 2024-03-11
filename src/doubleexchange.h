@@ -8,6 +8,8 @@
 
 #include "slater_condon.h"
 
+double solveQuad(double a, double b, double c) ;
+
 size_t get_matelem(size_t deti, size_t detj) ;
 
 void printBits(size_t num, size_t len) ;
@@ -54,3 +56,9 @@ void save_matrix(double** matrix, int rows, int cols, char* filename) ;
 
 // Function to generate all possible alpha determinants
 void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, size_t sizeCSF, const igraph_t* graph, size_t ipos, size_t Icfg, size_t Icsf, igraph_vector_int_t* monoCFGList, igraph_vector_t* monoMEs, double t, double Jme, double Kme) ;
+
+void getdet(long int Icsf, int *ideter, size_t* configAlpha, long int sizeAlpha, int norb) ;
+
+void adr (int *ideter, long int *iii, size_t* configAlpha, long int sizeAlpha, int norb) ;
+
+void getS2Operator(size_t Icsf, igraph_vector_t* MElist, igraph_vector_int_t* Jdetlist, size_t *configAlpha, size_t sizeAlpha, const igraph_t* graph, int natom, int natomax) ;

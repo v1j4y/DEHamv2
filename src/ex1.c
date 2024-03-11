@@ -23,7 +23,7 @@ int main(int argc,char **argv)
   EPS            eps;         /* eigenproblem solver context */
   EPSType        type;
   PetscReal      error,tol,re,im;
-  PetscScalar    kr,ki, dot;
+  PetscScalar    kr,ki, dot, spin;
   Vec            xr,xi, vs2;
   PetscLogDouble t1,t2,tt1,tt2;
   PetscReal normfin;
@@ -114,8 +114,17 @@ int main(int argc,char **argv)
   // Sort the lists for binary search
   qsort(csfList, sizeCSF, sizeof(size_t), compare);
   //printf(" CSF           List # = %ld \n",sizeCSF);
-  //for( int i=0; i<sizeCSF; ++i ) {
-  //  printBits(csfList[i], nelec);
+  //int ideter[nelec];
+  //getdet(1, ideter, csfList, sizeCSF, nelec);
+  //ideter[2]=2;
+  //ideter[3]=1;
+  //long int posA;
+  //adr (ideter, &posA,
+  //    csfList, sizeCFG, nelec);
+  //printf(" pos=%ld\n",posA);
+  //getdet(2, ideter, csfList, sizeCSF, nelec);
+  //for( int i=0; i<nelec; ++i ) {
+  //  printf(" %d > %d\n",i,ideter[i]);
   //}
 
   /* Note on ordering of determinants
@@ -177,36 +186,6 @@ int main(int argc,char **argv)
   int cols = rows;
   //double** matrix = declare_matrix(rows, cols);
 
-  //printf(" Ne=%ld Na=%ld Nb=%ld \n", nelec, nalpha, nbeta);
-
-  //for( int j=0; j<sizeCFG; ++j ) {
-  //  size_t icfg[1];
-  //  icfg[0] = configList[j];
-  //  for( int k=0; k<sizeCSF; ++k ) {
-  //    size_t icsf[1];
-  //    icsf[0] = csfList[k];
-  //    size_t posi = findGlobalID(j, k, sizeCFG, sizeCSF);
-  //    igraph_vector_int_t monoCFGList;
-  //    igraph_vector_int_init(&monoCFGList, 0);
-  //    igraph_vector_t monoMEs;
-  //    igraph_vector_init(&monoMEs, 0);
-  //    generateMonoCFGs(configList, sizeCFG, csfList, sizeCSF, &graph, posi, icfg[0], icsf[0], &monoCFGList, &monoMEs, Jme, Kme);
-  //    //printf(" posi=%ld \n",posi);
-  //    for( int i=0; i<igraph_vector_int_size(&monoCFGList); ++i ) {
-  //      //size_t iglobalid = VECTOR(monoCFGList)[i];
-  //      //size_t icfgid = findCFGID(iglobalid, sizeCFG, sizeCSF);
-  //      //size_t icsfid = findCSFID(iglobalid, sizeCFG, sizeCSF);
-  //      size_t posj = VECTOR(monoCFGList)[i];
-  //      double val  = VECTOR(monoMEs)[i];
-  //      //matrix[posi][posj] += val;
-  //      //printf("(%ld, %ld) = %f\n",posi, posj, val);
-  //    }
-
-  //    igraph_vector_int_destroy(&monoCFGList);
-  //    igraph_vector_destroy(&monoMEs);
-  //  }
-  //}
-
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
      Compute the operator matrix that defines the eigensystem, Ax=kx
      - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -229,6 +208,20 @@ int main(int argc,char **argv)
   PetscCall(MatMPIBAIJSetPreallocation(A,1,max_nbrs*nsites,NULL,max_nbrs*nsites,NULL));
   //PetscViewer viewer; // declare a viewer object
   //PetscViewerASCIIGetStdout(PETSC_COMM_WORLD, &viewer); // get the standard output
+  /*
+   * Matrix for the S2 operator
+    */
+  //PetscCall(MatCreate(PETSC_COMM_WORLD,&S2));
+  //PetscCall(MatSetSizes(S2,PETSC_DECIDE,PETSC_DECIDE,n,n));
+  //PetscCall(MatCreateAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,n,n,4*num_vertices,NULL,4*num_vertices,NULL,&S2));
+  //PetscCall(MatMPIAIJSetPreallocation(S2,4*num_vertices,NULL,4*num_vertices,NULL));
+  // Symmetric Matrix
+  PetscCall(MatCreate(PETSC_COMM_WORLD,&S2));
+  PetscCall(MatCreateSBAIJ(PETSC_COMM_WORLD,1,PETSC_DECIDE,PETSC_DECIDE,n,n,12 + nelec,NULL,12 + nelec,NULL,&S2));
+  //PetscCall(MatSetSizes(A,PETSC_DECIDE,PETSC_DECIDE,n,n));
+  PetscCall(MatSetType (S2, MATSBAIJ));
+  PetscCall(MatMPIBAIJSetPreallocation(S2,1,12 + nelec,NULL,12 + nelec,NULL));
+
 
   PetscCall(PetscTime(&tt1));
 
@@ -279,6 +272,48 @@ int main(int argc,char **argv)
   PetscCall(PetscTime(&tt2));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to assemble the matrix: %f\n",tt2-tt1));
   //PetscCall(MatView(A, viewer));
+
+  /*
+   * Initialize S2 operator
+    */
+  PetscCall(MatGetOwnershipRange(S2,&Istart,&Iend));
+  for (i=Istart;i<Iend;i++) {
+
+    igraph_vector_int_t monoCFGList;
+    igraph_vector_int_init(&monoCFGList, 0);
+    igraph_vector_t monoMEs;
+    igraph_vector_init(&monoMEs, 0);
+    size_t posi = i;
+    cfgid = findCFGID(posi, sizeCFG, sizeCSF);
+    csfid = findCSFID(posi, sizeCFG, sizeCSF);
+    icfg[0] = configList[cfgid];
+    icsf[0] = csfList[csfid];
+
+    getS2Operator(csfid, &monoMEs, &monoCFGList, csfList, sizeCSF, &graph, nelec, nelec);
+    for (int j = 0; j < igraph_vector_int_size(&monoCFGList); ++j) {
+      PetscInt Jid = cfgid * sizeCSF + VECTOR(monoCFGList)[j];
+      PetscInt Iid = i;
+      PetscReal val = VECTOR(monoMEs)[j];
+      //matrix[i][Jid] = VECTOR(MElist)[j];
+      //printf(" %d %10.5f \n",Jid, VECTOR(MElist)[j]);
+      if( Iid > Jid) PetscCall(MatSetValue(S2,Jid,Iid,val,INSERT_VALUES));
+      else           PetscCall(MatSetValue(S2,Iid,Jid,val,INSERT_VALUES));
+      //PetscCall(MatSetValue(S2,Jid,i,t*(PetscReal)VECTOR(MElist)[j],INSERT_VALUES));
+      //printf("(%ld, %ld) = %f\n",Iid, Jid, val);
+    }
+
+    igraph_vector_int_destroy(&monoCFGList);
+    igraph_vector_destroy(&monoMEs);
+  }
+  PetscCall(PetscTime(&tt2));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to build the S2 operator: %f\n",tt2-tt1));
+
+
+  PetscCall(PetscTime(&tt1));
+  PetscCall(MatAssemblyBegin(S2,MAT_FINAL_ASSEMBLY));
+  PetscCall(MatAssemblyEnd(S2,MAT_FINAL_ASSEMBLY));
+  PetscCall(PetscTime(&tt2));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to assemble the matrix: %f\n",tt2-tt1));
 
   PetscCall(MatCreateVecs(A,NULL,&xr));
   PetscCall(MatCreateVecs(A,NULL,&xi));
@@ -376,11 +411,13 @@ int main(int argc,char **argv)
       /*
        * Get Spin S2 value
        */
-      //PetscCall(MatMult(S2, xr, vs2));
-      //PetscCall(VecDot(xr, vs2, &dot));
+      PetscCall(MatMult(S2, xr, vs2));
+      PetscCall(VecDot(xr, vs2, &dot));
+
+      spin = solveQuad(1.0, 1.0, -1.0*dot);
 
       if (im!=0.0) PetscCall(PetscPrintf(PETSC_COMM_WORLD," %9f%+9fi %12g\n",(double)re,(double)im,(double)error));
-      else PetscCall(PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12g       %12f\n",(double)re,(double)error,(double)abs(dot)));
+      else PetscCall(PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12g       %12f\n",(double)re,(double)error,(double)fabs(spin)));
     }
     PetscCall(PetscPrintf(PETSC_COMM_WORLD,"\n"));
   }
