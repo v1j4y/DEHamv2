@@ -386,7 +386,7 @@ int main(int argc,char **argv)
        Display eigenvalues and relative errors
     */
     PetscCall(PetscPrintf(PETSC_COMM_WORLD,
-         "           k          ||Ax-kx||/||kx||         S2    \n"
+         "           k          ||Ax-kx||/||kx||         S     \n"
          "   ----------------- ---------------------------------\n"));
 
     for (i=0;i<nconv;i++) {
