@@ -48,6 +48,7 @@ int main(int argc,char **argv)
   */
   PetscInt  nholes;
   PetscInt  nalpha;
+  PetscInt  DoS2;
   PetscReal t_inp = -1.0;
   PetscReal Jme_inp =  0.030;
   PetscReal Kme_inp = -0.0;
@@ -61,6 +62,8 @@ int main(int argc,char **argv)
   PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate J with the -hj option");
   PetscCall(PetscOptionsGetReal(NULL,NULL,"-hk",&Kme_inp,&flg));
   PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate K with the -hk option");
+  PetscCall(PetscOptionsGetInt(NULL,NULL,"-hs2",&DoS2,NULL));
+  PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate whether or not to S2 with the -hs2 option (1=true, 0=false)");
 
   igraph_t graph;
   igraph_empty(&graph, 0, IGRAPH_DIRECTED);
@@ -211,16 +214,13 @@ int main(int argc,char **argv)
   /*
    * Matrix for the S2 operator
     */
-  //PetscCall(MatCreate(PETSC_COMM_WORLD,&S2));
-  //PetscCall(MatSetSizes(S2,PETSC_DECIDE,PETSC_DECIDE,n,n));
-  //PetscCall(MatCreateAIJ(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,n,n,4*num_vertices,NULL,4*num_vertices,NULL,&S2));
-  //PetscCall(MatMPIAIJSetPreallocation(S2,4*num_vertices,NULL,4*num_vertices,NULL));
-  // Symmetric Matrix
-  PetscCall(MatCreate(PETSC_COMM_WORLD,&S2));
-  PetscCall(MatCreateSBAIJ(PETSC_COMM_WORLD,1,PETSC_DECIDE,PETSC_DECIDE,n,n,12 + nelec,NULL,12 + nelec,NULL,&S2));
-  //PetscCall(MatSetSizes(A,PETSC_DECIDE,PETSC_DECIDE,n,n));
-  PetscCall(MatSetType (S2, MATSBAIJ));
-  PetscCall(MatMPIBAIJSetPreallocation(S2,1,12 + nelec,NULL,12 + nelec,NULL));
+  if(DoS2){
+    // Symmetric Matrix
+    PetscCall(MatCreate(PETSC_COMM_WORLD,&S2));
+    PetscCall(MatCreateSBAIJ(PETSC_COMM_WORLD,1,PETSC_DECIDE,PETSC_DECIDE,n,n,nelec*nelec,NULL,nelec*nelec,NULL,&S2));
+    PetscCall(MatSetType (S2, MATSBAIJ));
+    PetscCall(MatMPIBAIJSetPreallocation(S2,1,nelec*nelec,NULL,nelec*nelec,NULL));
+  }
 
 
   PetscCall(PetscTime(&tt1));
@@ -273,47 +273,49 @@ int main(int argc,char **argv)
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to assemble the matrix: %f\n",tt2-tt1));
   //PetscCall(MatView(A, viewer));
 
-  /*
-   * Initialize S2 operator
-    */
-  PetscCall(MatGetOwnershipRange(S2,&Istart,&Iend));
-  for (i=Istart;i<Iend;i++) {
+  if(DoS2) {
+    /*
+     * Initialize S2 operator
+      */
+    PetscCall(MatGetOwnershipRange(S2,&Istart,&Iend));
+    for (i=Istart;i<Iend;i++) {
 
-    igraph_vector_int_t monoCFGList;
-    igraph_vector_int_init(&monoCFGList, 0);
-    igraph_vector_t monoMEs;
-    igraph_vector_init(&monoMEs, 0);
-    size_t posi = i;
-    cfgid = findCFGID(posi, sizeCFG, sizeCSF);
-    csfid = findCSFID(posi, sizeCFG, sizeCSF);
-    icfg[0] = configList[cfgid];
-    icsf[0] = csfList[csfid];
+      igraph_vector_int_t monoCFGList;
+      igraph_vector_int_init(&monoCFGList, 0);
+      igraph_vector_t monoMEs;
+      igraph_vector_init(&monoMEs, 0);
+      size_t posi = i;
+      cfgid = findCFGID(posi, sizeCFG, sizeCSF);
+      csfid = findCSFID(posi, sizeCFG, sizeCSF);
+      icfg[0] = configList[cfgid];
+      icsf[0] = csfList[csfid];
 
-    getS2Operator(csfid, &monoMEs, &monoCFGList, csfList, sizeCSF, &graph, nelec, nelec);
-    for (int j = 0; j < igraph_vector_int_size(&monoCFGList); ++j) {
-      PetscInt Jid = cfgid * sizeCSF + VECTOR(monoCFGList)[j];
-      PetscInt Iid = i;
-      PetscReal val = VECTOR(monoMEs)[j];
-      //matrix[i][Jid] = VECTOR(MElist)[j];
-      //printf(" %d %10.5f \n",Jid, VECTOR(MElist)[j]);
-      if( Iid > Jid) PetscCall(MatSetValue(S2,Jid,Iid,val,INSERT_VALUES));
-      else           PetscCall(MatSetValue(S2,Iid,Jid,val,INSERT_VALUES));
-      //PetscCall(MatSetValue(S2,Jid,i,t*(PetscReal)VECTOR(MElist)[j],INSERT_VALUES));
-      //printf("(%ld, %ld) = %f\n",Iid, Jid, val);
+      getS2Operator(csfid, &monoMEs, &monoCFGList, csfList, sizeCSF, &graph, nelec, nelec);
+      for (int j = 0; j < igraph_vector_int_size(&monoCFGList); ++j) {
+        PetscInt Jid = cfgid * sizeCSF + VECTOR(monoCFGList)[j];
+        PetscInt Iid = i;
+        PetscReal val = VECTOR(monoMEs)[j];
+        //matrix[i][Jid] = VECTOR(MElist)[j];
+        //printf(" %d %10.5f \n",Jid, VECTOR(MElist)[j]);
+        if( Iid > Jid) PetscCall(MatSetValue(S2,Jid,Iid,val,INSERT_VALUES));
+        else           PetscCall(MatSetValue(S2,Iid,Jid,val,INSERT_VALUES));
+        //PetscCall(MatSetValue(S2,Jid,i,t*(PetscReal)VECTOR(MElist)[j],INSERT_VALUES));
+        //printf("(%ld, %ld) = %f\n",Iid, Jid, val);
+      }
+
+      igraph_vector_int_destroy(&monoCFGList);
+      igraph_vector_destroy(&monoMEs);
     }
+    PetscCall(PetscTime(&tt2));
+    PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to build the S2 operator: %f\n",tt2-tt1));
 
-    igraph_vector_int_destroy(&monoCFGList);
-    igraph_vector_destroy(&monoMEs);
+
+    PetscCall(PetscTime(&tt1));
+    PetscCall(MatAssemblyBegin(S2,MAT_FINAL_ASSEMBLY));
+    PetscCall(MatAssemblyEnd(S2,MAT_FINAL_ASSEMBLY));
+    PetscCall(PetscTime(&tt2));
+    PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to assemble the matrix: %f\n",tt2-tt1));
   }
-  PetscCall(PetscTime(&tt2));
-  PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to build the S2 operator: %f\n",tt2-tt1));
-
-
-  PetscCall(PetscTime(&tt1));
-  PetscCall(MatAssemblyBegin(S2,MAT_FINAL_ASSEMBLY));
-  PetscCall(MatAssemblyEnd(S2,MAT_FINAL_ASSEMBLY));
-  PetscCall(PetscTime(&tt2));
-  PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to assemble the matrix: %f\n",tt2-tt1));
 
   PetscCall(MatCreateVecs(A,NULL,&xr));
   PetscCall(MatCreateVecs(A,NULL,&xi));
@@ -386,7 +388,7 @@ int main(int argc,char **argv)
        Display eigenvalues and relative errors
     */
     PetscCall(PetscPrintf(PETSC_COMM_WORLD,
-         "           k          ||Ax-kx||/||kx||         S     \n"
+         "           k          ||Ax-kx||/||kx||         S2    \n"
          "   ----------------- ---------------------------------\n"));
 
     for (i=0;i<nconv;i++) {
@@ -408,13 +410,16 @@ int main(int argc,char **argv)
       im = ki;
 #endif
 
-      /*
-       * Get Spin S2 value
-       */
-      PetscCall(MatMult(S2, xr, vs2));
-      PetscCall(VecDot(xr, vs2, &dot));
+      if(DoS2) {
+        /*
+         * Get Spin S2 value
+         */
+        PetscCall(MatMult(S2, xr, vs2));
+        PetscCall(VecDot(xr, vs2, &dot));
 
-      spin = solveQuad(1.0, 1.0, -1.0*dot);
+        spin = solveQuad(1.0, 1.0, -1.0*dot);
+      }
+      else spin = 100;
 
       if (im!=0.0) PetscCall(PetscPrintf(PETSC_COMM_WORLD," %9f%+9fi %12g\n",(double)re,(double)im,(double)error));
       else PetscCall(PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12g       %12f\n",(double)re,(double)error,(double)fabs(spin)));

@@ -304,7 +304,7 @@ void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, si
             for (size_t j = 0; j < igraph_vector_int_size(&orbital_id_allowed); ++j) {
                 size_t orbital_id = VECTOR(orbital_id_allowed)[j];
                 if((( (Icfg >> i ) & 1) & ((Icfg >> orbital_id) & 1)) & (i>orbital_id)) {
-                    Jmetot += Jme*0.5;
+                    //Jmetot += Jme*0.5;
                     // Find the real index
                     size_t i0, j0;
                     size_t mask = (((size_t)1 << (i+1)) - 1);
