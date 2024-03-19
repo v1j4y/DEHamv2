@@ -200,9 +200,14 @@ int main(int argc,char **argv)
   PetscCall(PetscPrintf(PETSC_COMM_WORLD,"====================================================="));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD,"\nDEHamv2: Double Exchange Eigenproblem, n=%" PetscInt_FMT "\n",n));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD,"=====================================================\n\n"));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] Nsites     \t\t %" PetscInt_FMT "\n",(size_t)nsites));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] alpha      \t\t %" PetscInt_FMT "\n",(size_t)nalpha));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] Max Nbrs   \t\t %" PetscInt_FMT "\n",(size_t)max_nbrs));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] N(configurations)   \t %" PetscInt_FMT "\n",sizeCFG));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] N(CSFs)   \t\t %" PetscInt_FMT "\n",sizeCSF));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] J          \t\t %10.5f |t| \n",(double)-Jme));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] K          \t\t %10.5f |t| \n",(double)-Kme));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] h          \t\t %" PetscInt_FMT "\n",(size_t)nholes));
   // Symmetric Matrix
   PetscCall(MatCreate(PETSC_COMM_WORLD,&A));
   PetscCall(MatCreateSBAIJ(PETSC_COMM_WORLD,1,PETSC_DECIDE,PETSC_DECIDE,n,n,max_nbrs*nsites,NULL,max_nbrs*nsites,NULL,&A));
