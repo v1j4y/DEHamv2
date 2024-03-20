@@ -39,7 +39,7 @@ void printBitsDE(size_t num, size_t len, size_t nelecF1) {
 void generateConfigurations(size_t norb, size_t nelec, size_t* configAll, size_t* size) {
     *size = 0;
 
-    for (size_t i = 0; i < (1 << norb); ++i) {
+    for (size_t i = 0; i < ((size_t)1 << norb); ++i) {
         if (popcnt (i) == nelec) {
             configAll[(*size)++] = i;
         }
