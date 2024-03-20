@@ -22,15 +22,15 @@ long long binomialCoeff(size_t n, size_t k) {
 }
 
 void printBits(size_t num, size_t len) {
-    for (int bit = len - 1; bit >= 0; --bit) {
-        printf("%ld", (num >> bit) & 1);
+    for (size_t bit = len - (size_t)1; bit >= 0; --bit) {
+        printf("%ld", (num >> bit) & (size_t)1);
     }
     printf("\n");
 }
 
 void printBitsDE(size_t num, size_t len, size_t nelecF1) {
-    for (int bit = len - 1; bit >= 0; --bit) {
-        printf("%ld", (num >> bit) & 1);
+    for (size_t bit = len - (size_t)1; bit >= 0; --bit) {
+        printf("%ld", (num >> bit) & (size_t)1);
         if(bit==(nelecF1)) printf("\n");
     }
     printf("\n");
@@ -61,7 +61,14 @@ size_t findCSFID(size_t globalID, size_t nCFG, size_t nCSF) {
 
 // Function to compare two configurations for qsort and bsearch
 int compare(const void* a, const void* b) {
-    return (*(size_t*)a - *(size_t*)b);
+    if(*(size_t*)a > *(size_t*)b) {
+      return (1);
+    }
+    else if(*(size_t*)a == *(size_t*)b) {
+      return (0);
+    }
+    else return (-1);
+    //return (*(size_t*)a - *(size_t*)b);
 }
 
 // Function to find the positions of a list of configurations in a sorted list
@@ -379,7 +386,7 @@ void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, si
     igraph_vector_push_back(monoMEs, Jmetot + Kmetot);
 }
 
-void getdet(long int Icsf, int *ideter, size_t* configAlpha, long int sizeAlpha, int norb) {
+void getdet(size_t Icsf, int *ideter, size_t* configAlpha, size_t sizeAlpha, int norb) {
     //Find alpha and beta ids
     size_t alphadet = configAlpha[Icsf];
     size_t maskI = ~((size_t)1 << (norb));
@@ -387,13 +394,13 @@ void getdet(long int Icsf, int *ideter, size_t* configAlpha, long int sizeAlpha,
     
     int occv[4] = {3,1,2,4};
     int occ = 0;
-    for( int i=0;i<norb; ++i ) {
+    for( size_t i=0;i<norb; ++i ) {
       occ = 0;
-      if((alphadet & (1<<i)) != 0 ) {
+      if((alphadet & ((size_t)1<<i)) != 0 ) {
         occ = 1;
       }
       //printf(" (%d) ",(alphadet & (1<<i))==0);
-      if((betadet & (1<<i)) != 0) {
+      if((betadet & ((size_t)1<<i)) != 0) {
         if(occ == 1) occ = 3;
         else occ = 2;
       }
@@ -402,7 +409,7 @@ void getdet(long int Icsf, int *ideter, size_t* configAlpha, long int sizeAlpha,
     }
 }
 
-void adr (int *ideter, long int *iii, size_t* configAlpha, long int sizeAlpha, int norb) {
+void adr (int *ideter, size_t *iii, size_t* configAlpha, size_t sizeAlpha, int norb) {
     int occ = 0;
     size_t alphadet = 0;
     size_t betadet = 0;
@@ -413,14 +420,14 @@ void adr (int *ideter, long int *iii, size_t* configAlpha, long int sizeAlpha, i
         case 3:
           break;
         case 1:
-          alphadet = alphadet | (1 << i);
+          alphadet = alphadet | ((size_t)1 << i);
           break;
         case 2:
-          betadet = betadet | (1 << i);
+          betadet = betadet | ((size_t)1 << i);
           break;
         case 4:
-          alphadet = alphadet | (1 << i);
-          betadet = betadet | (1 << i);
+          alphadet = alphadet | ((size_t)1 << i);
+          betadet = betadet | ((size_t)1 << i);
           break;
       }
     }
@@ -435,8 +442,8 @@ void getS2Operator(size_t Icsf, igraph_vector_t* MElist, igraph_vector_int_t* Jd
     int phaseBeta;
     int ideter[natomax];
     int ideter2[natomax];
-    int kko, kok, kkio;
-    int iiii, iii, ii;
+    size_t kko, kok, kkio;
+    size_t iiii, iii, ii;
     size_t iaa2;
     double xmat = 0.0;
     //Find alpha and beta ids
