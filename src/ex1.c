@@ -107,6 +107,26 @@ int main(int argc,char **argv)
   //printf(" Max Nbrs           # = %d \n",max_nbrs);
   size_t* csfJKList  = malloc(sizeCSF * max_nbrs * sizeof(size_t));
 
+  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+     Compute the operator matrix that defines the eigensystem, Ax=kx
+     - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD,"====================================================="));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD,"\nDEHamv2: Double Exchange Eigenproblem, n=%" PetscInt_FMT "\n",sizeTotal));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD,"=====================================================\n\n"));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] Nsites     \t\t %" PetscInt_FMT "\n",(size_t)nsites));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] Nalpha     \t\t %" PetscInt_FMT "\n",(size_t)nalpha));
+  if(DBGPrinting) {
+    PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] Nbeta      \t\t %" PetscInt_FMT "\n",(size_t)nbeta));
+  }
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] Max Nbrs   \t\t %" PetscInt_FMT "\n",(size_t)max_nbrs));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] N(configurations)   \t %" PetscInt_FMT "\n",sizeCFG));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] N(CSFs)   \t\t %" PetscInt_FMT "\n",sizeCSF));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] J          \t\t %10.5f |t| \n",(double)-Jme));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] K          \t\t %10.5f |t| \n",(double)-Kme));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] h          \t\t %" PetscInt_FMT "\n",(size_t)nholes));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Wait] Generating CSFs... \t\t \n"));
+
   generateConfigurations(nsites, (nsites-nholes), configList, &sizeCFG);
 
   // Sort the lists for binary search
@@ -119,6 +139,7 @@ int main(int argc,char **argv)
   generateConfigurations(nelec, nalpha, csfList, &sizeCSF);
   // Sort the lists for binary search
   qsort(csfList, sizeCSF, sizeof(size_t), compare);
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Done] Generating CSFs !  \t\t \n"));
   //printf(" CSF           List # = %ld \n",sizeCSF);
   //int ideter[nelec];
   //getdet(1, ideter, csfList, sizeCSF, nelec);
@@ -199,21 +220,6 @@ int main(int argc,char **argv)
   PetscInt       n=sizeTotal,i,Istart,Iend,nev,maxit,its,nconv;
   PetscInt		   ncv, mpd;
 
-  PetscCall(PetscOptionsGetInt(NULL,NULL,"-n",&n,NULL));
-  PetscCall(PetscPrintf(PETSC_COMM_WORLD,"====================================================="));
-  PetscCall(PetscPrintf(PETSC_COMM_WORLD,"\nDEHamv2: Double Exchange Eigenproblem, n=%" PetscInt_FMT "\n",n));
-  PetscCall(PetscPrintf(PETSC_COMM_WORLD,"=====================================================\n\n"));
-  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] Nsites     \t\t %" PetscInt_FMT "\n",(size_t)nsites));
-  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] Nalpha     \t\t %" PetscInt_FMT "\n",(size_t)nalpha));
-  if(DBGPrinting) {
-    PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] Nbeta      \t\t %" PetscInt_FMT "\n",(size_t)nbeta));
-  }
-  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] Max Nbrs   \t\t %" PetscInt_FMT "\n",(size_t)max_nbrs));
-  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] N(configurations)   \t %" PetscInt_FMT "\n",sizeCFG));
-  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] N(CSFs)   \t\t %" PetscInt_FMT "\n",sizeCSF));
-  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] J          \t\t %10.5f |t| \n",(double)-Jme));
-  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] K          \t\t %10.5f |t| \n",(double)-Kme));
-  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] h          \t\t %" PetscInt_FMT "\n",(size_t)nholes));
   // Symmetric Matrix
   PetscCall(MatCreate(PETSC_COMM_WORLD,&A));
   PetscCall(MatCreateSBAIJ(PETSC_COMM_WORLD,1,PETSC_DECIDE,PETSC_DECIDE,n,n,max_nbrs*nsites,NULL,max_nbrs*nsites,NULL,&A));
