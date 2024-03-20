@@ -48,7 +48,8 @@ int main(int argc,char **argv)
   */
   PetscInt  nholes;
   PetscInt  nalpha;
-  PetscInt  DoS2;
+  PetscInt  DoS2 = 0;
+  PetscInt  DBGPrinting = 0;
   PetscReal t_inp = -1.0;
   PetscReal Jme_inp =  0.030;
   PetscReal Kme_inp = -0.0;
@@ -64,6 +65,8 @@ int main(int argc,char **argv)
   PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate K with the -hk option");
   PetscCall(PetscOptionsGetInt(NULL,NULL,"-hs2",&DoS2,NULL));
   PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate whether or not to S2 with the -hs2 option (1=true, 0=false)");
+  PetscCall(PetscOptionsGetInt(NULL,NULL,"-pd",&DBGPrinting,NULL));
+  PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate debug printing with the -pd option");
 
   igraph_t graph;
   igraph_empty(&graph, 0, IGRAPH_DIRECTED);
@@ -201,7 +204,10 @@ int main(int argc,char **argv)
   PetscCall(PetscPrintf(PETSC_COMM_WORLD,"\nDEHamv2: Double Exchange Eigenproblem, n=%" PetscInt_FMT "\n",n));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD,"=====================================================\n\n"));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] Nsites     \t\t %" PetscInt_FMT "\n",(size_t)nsites));
-  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] alpha      \t\t %" PetscInt_FMT "\n",(size_t)nalpha));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] Nalpha     \t\t %" PetscInt_FMT "\n",(size_t)nalpha));
+  if(DBGPrinting) {
+    PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] Nbeta      \t\t %" PetscInt_FMT "\n",(size_t)nbeta));
+  }
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] Max Nbrs   \t\t %" PetscInt_FMT "\n",(size_t)max_nbrs));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] N(configurations)   \t %" PetscInt_FMT "\n",sizeCFG));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] N(CSFs)   \t\t %" PetscInt_FMT "\n",sizeCSF));
@@ -222,9 +228,9 @@ int main(int argc,char **argv)
   if(DoS2){
     // Symmetric Matrix
     PetscCall(MatCreate(PETSC_COMM_WORLD,&S2));
-    PetscCall(MatCreateSBAIJ(PETSC_COMM_WORLD,1,PETSC_DECIDE,PETSC_DECIDE,n,n,nelec*nelec,NULL,nelec*nelec,NULL,&S2));
+    PetscCall(MatCreateSBAIJ(PETSC_COMM_WORLD,1,PETSC_DECIDE,PETSC_DECIDE,n,n,nalpha*nalpha,NULL,nalpha*nalpha,NULL,&S2));
     PetscCall(MatSetType (S2, MATSBAIJ));
-    PetscCall(MatMPIBAIJSetPreallocation(S2,1,nelec*nelec,NULL,nelec*nelec,NULL));
+    PetscCall(MatMPIBAIJSetPreallocation(S2,1,nalpha*nalpha,NULL,nalpha*nalpha,NULL));
   }
 
 
