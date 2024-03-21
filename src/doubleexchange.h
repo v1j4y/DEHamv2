@@ -62,3 +62,6 @@ void getdet(size_t Icsf, int *ideter, size_t* configAlpha, size_t sizeAlpha, int
 void adr (int *ideter, size_t *iii, size_t* configAlpha, size_t sizeAlpha, int norb) ;
 
 void getS2Operator(size_t Icsf, igraph_vector_t* MElist, igraph_vector_int_t* Jdetlist, size_t *configAlpha, size_t sizeAlpha, const igraph_t* graph, int natom, int natomax) ;
+
+// Function to get the TPS operator
+void getTPSOperator(size_t cfgid, double *tpsval, size_t* cfgList, size_t sizeCFG, const igraph_t* graph, size_t nsites, size_t nholes) ;

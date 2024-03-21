@@ -153,6 +153,20 @@ int getPart_1ex(size_t detI, size_t detJ, size_t *particlesOut) {
     return nparticles;
 }
 
+void getElecList(size_t detI, size_t *holesOut, size_t nelec) {
+    
+    // Initialize determinant
+    determinant_t d1[1];
+    d1[0] = detI;
+    orbital_t particles[nelec];
+    orbital_t res;
+    // Get the orbital (or holes) list
+    res = to_orbital_list((size_t) 1, d1, particles);
+    for( size_t i=0;i<nelec; ++i ) {
+      holesOut[i] = particles[i];
+    }
+}
+
 // Get maximum neighbors
 int getMaxNeighbors(const igraph_t* graph, size_t nsites) {
     int max_nbrs = 0;
@@ -491,3 +505,19 @@ void getS2Operator(size_t Icsf, igraph_vector_t* MElist, igraph_vector_int_t* Jd
     igraph_vector_int_push_back(Jdetlist, Icsf);
     igraph_vector_push_back(MElist, xmat);
 }
+
+// Function to get the TPS operator
+void getTPSOperator(size_t detI, double *tpsval, size_t* cfgList, size_t sizeCFG, const igraph_t* graph, size_t nsites, size_t nholes) {
+
+    size_t maskI = (((size_t)1 << (nsites))-1);
+    size_t detIh = detI ^ maskI;
+    // Get the number of holes
+    size_t holesOut[nholes];
+    getElecList(detIh, holesOut, nholes);
+    // Loop over the hole positions
+    *tpsval=0.0;
+    for (size_t i = 0; i < nholes; ++i) {
+      *tpsval += abs(nsites - holesOut[i]);
+    }
+}
+

@@ -20,6 +20,7 @@ int main(int argc,char **argv)
 {
   Mat            A;           /* problem matrix */
   Mat            S2;          /* S2 oper matrix */
+  Vec            tpsx;        /* The vector that stores the TPS operator */
   EPS            eps;         /* eigenproblem solver context */
   EPSType        type;
   PetscReal      error,tol,re,im;
@@ -49,6 +50,7 @@ int main(int argc,char **argv)
   PetscInt  nholes;
   PetscInt  nalpha;
   PetscInt  DoS2 = 0;
+  PetscInt  DoTPS = 0;
   PetscInt  DBGPrinting = 0;
   PetscReal t_inp = -1.0;
   PetscReal Jme_inp =  0.030;
@@ -67,6 +69,8 @@ int main(int argc,char **argv)
   PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate whether or not to S2 with the -hs2 option (1=true, 0=false)");
   PetscCall(PetscOptionsGetInt(NULL,NULL,"-pd",&DBGPrinting,NULL));
   PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate debug printing with the -pd option");
+  PetscCall(PetscOptionsGetInt(NULL,NULL,"-htps",&DoTPS,NULL));
+  PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate whether or not to TPS with the -htps option (1=true, 0=false)");
 
   igraph_t graph;
   igraph_empty(&graph, 0, IGRAPH_DIRECTED);
@@ -239,6 +243,16 @@ int main(int argc,char **argv)
     PetscCall(MatMPIBAIJSetPreallocation(S2,1,nalpha*nalpha,NULL,nalpha*nalpha,NULL));
   }
 
+  /*
+   * Initialize vector for TPS
+    */
+  if(DoTPS){
+    PetscCall(MatCreateVecs(A,NULL,&tpsx));
+    //PetscCall(VecSetType(tpsx, VECMPI));
+    //PetscCall(VecSetSizes(tpsx, PETSC_DECIDE,n));
+    //PetscCall(VecSetFromOptions(tpsx));
+  }
+
 
   PetscCall(PetscTime(&tt1));
 
@@ -294,6 +308,7 @@ int main(int argc,char **argv)
     /*
      * Initialize S2 operator
       */
+    PetscCall(PetscTime(&tt1));
     PetscCall(MatGetOwnershipRange(S2,&Istart,&Iend));
     for (i=Istart;i<Iend;i++) {
 
@@ -330,6 +345,32 @@ int main(int argc,char **argv)
     PetscCall(PetscTime(&tt1));
     PetscCall(MatAssemblyBegin(S2,MAT_FINAL_ASSEMBLY));
     PetscCall(MatAssemblyEnd(S2,MAT_FINAL_ASSEMBLY));
+    PetscCall(PetscTime(&tt2));
+    PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to assemble the matrix: %f\n",tt2-tt1));
+  }
+
+  printf(" size=%ld\n",n);
+  if(DoTPS) {
+    /*
+     * Initialize TPS operator
+      */
+    PetscCall(PetscTime(&tt1));
+    PetscCall(VecGetOwnershipRange(tpsx,&Istart,&Iend));
+    for (i=Istart;i<Iend;i++) {
+      size_t posi = i;
+      double tpsval=0.0; 
+      cfgid = findCFGID(posi, sizeCFG, sizeCSF);
+      icfg[0] = configList[cfgid];
+      getTPSOperator(icfg[0], &tpsval, configList, sizeCFG, &graph, nsites, nholes);
+      PetscCall(VecSetValue(tpsx, i, (PetscReal)tpsval, INSERT_VALUES));
+    }
+    PetscCall(PetscTime(&tt2));
+    PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to build the TPS operator: %f\n",tt2-tt1));
+
+
+    PetscCall(PetscTime(&tt1));
+    PetscCall(VecAssemblyBegin(tpsx));
+    PetscCall(VecAssemblyEnd(tpsx));
     PetscCall(PetscTime(&tt2));
     PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to assemble the matrix: %f\n",tt2-tt1));
   }
