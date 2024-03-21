@@ -15,16 +15,17 @@ static char help[] = "Standard Double Exchange eigenproblem corresponding to the
 
 #include "doubleexchange.h"
 #include "readgraphmllib.h"
+#include "utils.h"
 
 int main(int argc,char **argv)
 {
   Mat            A;           /* problem matrix */
   Mat            S2;          /* S2 oper matrix */
-  Vec            tpsx;        /* The vector that stores the TPS operator */
+  Mat            tpsx;        /* The vector that stores the TPS operator */
   EPS            eps;         /* eigenproblem solver context */
   EPSType        type;
   PetscReal      error,tol,re,im;
-  PetscScalar    kr,ki, dot, spin;
+  PetscScalar    kr,ki, dot, spin, tps;
   Vec            xr,xi, vs2;
   PetscLogDouble t1,t2,tt1,tt2;
   PetscReal normfin;
@@ -34,6 +35,7 @@ int main(int argc,char **argv)
   PetscCall(SlepcInitialize(&argc,&argv,(char*)0,help));
 
   char        graphmlFileName[PETSC_MAX_PATH_LEN]; /* input file name */
+  char        tpsblk[PETSC_MAX_PATH_LEN]; /* input file name */
   PetscBool       flg;
   PetscCall(PetscOptionsGetString(NULL, NULL, "-f", graphmlFileName, sizeof(graphmlFileName), &flg));
   PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate graphml file with the -f option");
@@ -71,6 +73,18 @@ int main(int argc,char **argv)
   PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate debug printing with the -pd option");
   PetscCall(PetscOptionsGetInt(NULL,NULL,"-htps",&DoTPS,NULL));
   PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate whether or not to TPS with the -htps option (1=true, 0=false)");
+  PetscCall(PetscOptionsGetString(NULL, NULL, "-htpsblk", tpsblk, sizeof(tpsblk), &flg));
+  PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Indicate tps blocks with -htpsblk option which inputs pairs of numbers separated by , (e.g. 1,2,3,4)");
+
+  /* 
+   * Read the TPS Blocks into an array
+   *
+   */
+  size_t* TPSBlock = malloc(MAX_TPS_BLOCKS * sizeof(size_t));
+  char *p = tpsblk;
+  int nblk = 0;
+  setTPSBlockList(p, &nblk, TPSBlock) ;
+  nblk = nblk/2;
 
   igraph_t graph;
   igraph_empty(&graph, 0, IGRAPH_DIRECTED);
@@ -93,9 +107,6 @@ int main(int argc,char **argv)
      Define Hamiltonian
      - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-  //double Jme =  0.030;
-  //double Kme = -0.8;
-  //double t = -1.0;
   double Jme = Jme_inp;
   double Kme = Kme_inp;
   double t = t_inp;
@@ -108,7 +119,6 @@ int main(int argc,char **argv)
   size_t* csfList    = malloc(sizeCSF * sizeof(size_t));
   // List for storing JK elems
   int max_nbrs = getMaxNeighbors(&graph, nsites);
-  //printf(" Max Nbrs           # = %d \n",max_nbrs);
   size_t* csfJKList  = malloc(sizeCSF * max_nbrs * sizeof(size_t));
 
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -122,6 +132,7 @@ int main(int argc,char **argv)
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] Nalpha     \t\t %" PetscInt_FMT "\n",(size_t)nalpha));
   if(DBGPrinting) {
     PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] Nbeta      \t\t %" PetscInt_FMT "\n",(size_t)nbeta));
+    PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] NTPSBlocks \t\t %" PetscInt_FMT "\n",(size_t)nblk/2));
   }
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] Max Nbrs   \t\t %" PetscInt_FMT "\n",(size_t)max_nbrs));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] N(configurations)   \t %" PetscInt_FMT "\n",sizeCFG));
@@ -135,28 +146,11 @@ int main(int argc,char **argv)
 
   // Sort the lists for binary search
   qsort(configList, sizeCFG, sizeof(size_t), compare);
-  //printf(" Configuration List # = %ld \n",sizeCFG);
-  //for( int i=0; i<sizeCFG; ++i ) {
-  //  printBits(configList[i], nsites);
-  //}
 
   generateConfigurations(nelec, nalpha, csfList, &sizeCSF);
   // Sort the lists for binary search
   qsort(csfList, sizeCSF, sizeof(size_t), compare);
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Done] Generating CSFs !  \t\t \n"));
-  //printf(" CSF           List # = %ld \n",sizeCSF);
-  //int ideter[nelec];
-  //getdet(1, ideter, csfList, sizeCSF, nelec);
-  //ideter[2]=2;
-  //ideter[3]=1;
-  //long int posA;
-  //adr (ideter, &posA,
-  //    csfList, sizeCFG, nelec);
-  //printf(" pos=%ld\n",posA);
-  //getdet(2, ideter, csfList, sizeCSF, nelec);
-  //for( int i=0; i<nelec; ++i ) {
-  //  printf(" %d > %d\n",i,ideter[i]);
-  //}
 
   /* Note on ordering of determinants
    * =================================
@@ -213,8 +207,8 @@ int main(int argc,char **argv)
     */
 
   // Declare a matrix of size 3 x 4
-  int rows = sizeTotal;
-  int cols = rows;
+  //int rows = sizeTotal;
+  //int cols = rows;
   //double** matrix = declare_matrix(rows, cols);
 
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -227,11 +221,9 @@ int main(int argc,char **argv)
   // Symmetric Matrix
   PetscCall(MatCreate(PETSC_COMM_WORLD,&A));
   PetscCall(MatCreateSBAIJ(PETSC_COMM_WORLD,1,PETSC_DECIDE,PETSC_DECIDE,n,n,max_nbrs*nsites,NULL,max_nbrs*nsites,NULL,&A));
-  //PetscCall(MatSetSizes(A,PETSC_DECIDE,PETSC_DECIDE,n,n));
   PetscCall(MatSetType ( A, MATSBAIJ));
   PetscCall(MatMPIBAIJSetPreallocation(A,1,max_nbrs*nsites,NULL,max_nbrs*nsites,NULL));
-  //PetscViewer viewer; // declare a viewer object
-  //PetscViewerASCIIGetStdout(PETSC_COMM_WORLD, &viewer); // get the standard output
+
   /*
    * Matrix for the S2 operator
     */
@@ -243,19 +235,7 @@ int main(int argc,char **argv)
     PetscCall(MatMPIBAIJSetPreallocation(S2,1,nalpha*nalpha,NULL,nalpha*nalpha,NULL));
   }
 
-  /*
-   * Initialize vector for TPS
-    */
-  if(DoTPS){
-    PetscCall(MatCreateVecs(A,NULL,&tpsx));
-    //PetscCall(VecSetType(tpsx, VECMPI));
-    //PetscCall(VecSetSizes(tpsx, PETSC_DECIDE,n));
-    //PetscCall(VecSetFromOptions(tpsx));
-  }
-
-
   PetscCall(PetscTime(&tt1));
-
 
   /*
    * Initialize Hamiltonian
@@ -349,32 +329,6 @@ int main(int argc,char **argv)
     PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to assemble the matrix: %f\n",tt2-tt1));
   }
 
-  printf(" size=%ld\n",n);
-  if(DoTPS) {
-    /*
-     * Initialize TPS operator
-      */
-    PetscCall(PetscTime(&tt1));
-    PetscCall(VecGetOwnershipRange(tpsx,&Istart,&Iend));
-    for (i=Istart;i<Iend;i++) {
-      size_t posi = i;
-      double tpsval=0.0; 
-      cfgid = findCFGID(posi, sizeCFG, sizeCSF);
-      icfg[0] = configList[cfgid];
-      getTPSOperator(icfg[0], &tpsval, configList, sizeCFG, &graph, nsites, nholes);
-      PetscCall(VecSetValue(tpsx, i, (PetscReal)tpsval, INSERT_VALUES));
-    }
-    PetscCall(PetscTime(&tt2));
-    PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to build the TPS operator: %f\n",tt2-tt1));
-
-
-    PetscCall(PetscTime(&tt1));
-    PetscCall(VecAssemblyBegin(tpsx));
-    PetscCall(VecAssemblyEnd(tpsx));
-    PetscCall(PetscTime(&tt2));
-    PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to assemble the matrix: %f\n",tt2-tt1));
-  }
-
   PetscCall(MatCreateVecs(A,NULL,&xr));
   PetscCall(MatCreateVecs(A,NULL,&xi));
   PetscCall(MatCreateVecs(A,NULL,&vs2));
@@ -446,8 +400,8 @@ int main(int argc,char **argv)
        Display eigenvalues and relative errors
     */
     PetscCall(PetscPrintf(PETSC_COMM_WORLD,
-         "           k          ||Ax-kx||/||kx||         S2    \n"
-         "   ----------------- ---------------------------------\n"));
+         "           k          ||Ax-kx||/||kx||         S2                 TPS    \n"
+         "   ----------------- -----------------------------------------------------\n"));
 
     for (i=0;i<nconv;i++) {
       /*
@@ -479,8 +433,33 @@ int main(int argc,char **argv)
       }
       else spin = 100;
 
+      if(DoTPS) {
+        /*
+         * Get TPS value
+         */
+        int xdi[nsites];
+        for(i=0;i<nsites;++i) {
+          xdi[i] = 0;
+        }
+        tps = 0.0;
+        PetscCall(VecGetOwnershipRange(xr,&Istart,&Iend));
+        for (i=Istart;i<Iend;i++) {
+          double val;
+          PetscInt ix[1];
+          PetscScalar y[1];
+          ix[0] = (size_t)i;
+          PetscCall(VecGetValues(xr, 1, ix, y));
+          size_t posi = i;
+          double tpsval[nblk]; 
+          cfgid = findCFGID(posi, sizeCFG, sizeCSF);
+          icfg[0] = configList[cfgid];
+          getTPSOperator(icfg[0], tpsval, configList, sizeCFG, nblk, TPSBlock, &graph, nsites, nholes);
+          tps += y[0]*y[0];
+        }
+      }
+
       if (im!=0.0) PetscCall(PetscPrintf(PETSC_COMM_WORLD," %9f%+9fi %12g\n",(double)re,(double)im,(double)error));
-      else PetscCall(PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12g       %12f\n",(double)re,(double)error,(double)fabs(spin)));
+      else PetscCall(PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12g       %12f       %12f\n",(double)re,(double)error,(double)fabs(spin),(double)tps));
     }
     PetscCall(PetscPrintf(PETSC_COMM_WORLD,"\n"));
   }

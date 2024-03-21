@@ -507,7 +507,7 @@ void getS2Operator(size_t Icsf, igraph_vector_t* MElist, igraph_vector_int_t* Jd
 }
 
 // Function to get the TPS operator
-void getTPSOperator(size_t detI, double *tpsval, size_t* cfgList, size_t sizeCFG, const igraph_t* graph, size_t nsites, size_t nholes) {
+void getTPSOperator(size_t detI, double *tpsval, size_t* cfgList, size_t sizeCFG, int nblk, size_t* TPSBlock, const igraph_t* graph, size_t nsites, size_t nholes) {
 
     size_t maskI = (((size_t)1 << (nsites))-1);
     size_t detIh = detI ^ maskI;
@@ -515,9 +515,15 @@ void getTPSOperator(size_t detI, double *tpsval, size_t* cfgList, size_t sizeCFG
     size_t holesOut[nholes];
     getElecList(detIh, holesOut, nholes);
     // Loop over the hole positions
-    *tpsval=0.0;
-    for (size_t i = 0; i < nholes; ++i) {
-      *tpsval += abs(nsites - holesOut[i]);
+    for(int k=0; k < nblk; ++k) {
+      tpsval[k] = 0.0;
+      size_t blki = TPSBlock[2*k];
+      size_t blkj = TPSBlock[2*k+1];
+      for (size_t i = 0; i < nholes; ++i) {
+        if( (holesOut[i] >= blki) && (holesOut[i] <= blkj)) {
+          tpsval[k] += abs(nsites - holesOut[i]);
+        }
+      }
     }
 }
 
