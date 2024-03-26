@@ -25,7 +25,7 @@ int main(int argc,char **argv)
   EPS            eps;         /* eigenproblem solver context */
   EPSType        type;
   PetscReal      error,tol,re,im;
-  PetscScalar    kr,ki, dot, spin, tps;
+  PetscScalar    kr,ki, dot, spin, tps, tpstot;
   Vec            xr,xi, vs2;
   PetscLogDouble t1,t2,tt1,tt2;
   PetscReal normfin;
@@ -454,6 +454,7 @@ int main(int argc,char **argv)
          * Get TPS value
          */
         tps = 0.0;
+        tpstot = 0.0;
         PetscCall(VecGetOwnershipRange(xr,&Istart,&Iend));
         for (size_t j=Istart;j<Iend;j++) {
           double val;
@@ -468,10 +469,11 @@ int main(int argc,char **argv)
           getTPSOperator(icfg[0], tpsval, xdi, configList, sizeCFG, nblk, TPSBlock, &graph, nsites, nholes);
           tps += y[0]*y[0]*tpsval[0];
         }
+        MPI_Reduce(&tps, &tpstot, 1, MPI_DOUBLE, MPI_SUM, 0, PETSC_COMM_WORLD);
       }
 
       if (im!=0.0) PetscCall(PetscPrintf(PETSC_COMM_WORLD," %9f%+9fi %12g\n",(double)re,(double)im,(double)error));
-      else PetscCall(PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12g       %12f       %12f\n",(double)re,(double)error,(double)fabs(spin),(double)tps));
+      else PetscCall(PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12g       %12f       %12f\n",(double)re,(double)error,(double)fabs(spin),(double)tpstot));
     }
     PetscCall(PetscPrintf(PETSC_COMM_WORLD,"\n"));
   }
