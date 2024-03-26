@@ -137,8 +137,9 @@ int main(int argc,char **argv)
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] Max Nbrs   \t\t %" PetscInt_FMT "\n",(size_t)max_nbrs));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] N(configurations)   \t %" PetscInt_FMT "\n",sizeCFG));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] N(CSFs)   \t\t %" PetscInt_FMT "\n",sizeCSF));
-  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] J          \t\t %10.5f |t| \n",(double)-Jme));
-  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] K          \t\t %10.5f |t| \n",(double)-Kme));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] t          \t\t %10.5f |t| \n",(double)t_inp));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] J          \t\t %10.5f |t| \n",(double)Jme));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] K          \t\t %10.5f |t| \n",(double)Kme));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] h          \t\t %" PetscInt_FMT "\n",(size_t)nholes));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Wait] Generating CSFs... \t\t \n"));
 
@@ -333,6 +334,21 @@ int main(int argc,char **argv)
   PetscCall(MatCreateVecs(A,NULL,&xi));
   PetscCall(MatCreateVecs(A,NULL,&vs2));
 
+  double xdi[nsites];
+  if(DoTPS) {
+    /*
+     * Initialize distance matrix
+     */
+    for(size_t j=0;j<nsites;++j) {
+      if((nsites & 1)) {
+        xdi[j] = -((nsites-1)/2) + j;
+      }
+      else {
+        xdi[j] = 0.5 - ((nsites-0)/2) + j;
+      }
+    }
+  }
+
   // Save file
   //save_matrix(matrix, rows, cols, "/tmp/4x4_de.csv");
 
@@ -437,24 +453,20 @@ int main(int argc,char **argv)
         /*
          * Get TPS value
          */
-        int xdi[nsites];
-        for(i=0;i<nsites;++i) {
-          xdi[i] = 0;
-        }
         tps = 0.0;
         PetscCall(VecGetOwnershipRange(xr,&Istart,&Iend));
-        for (i=Istart;i<Iend;i++) {
+        for (size_t j=Istart;j<Iend;j++) {
           double val;
           PetscInt ix[1];
           PetscScalar y[1];
-          ix[0] = (size_t)i;
+          ix[0] = (size_t)j;
           PetscCall(VecGetValues(xr, 1, ix, y));
-          size_t posi = i;
+          size_t posi = j;
           double tpsval[nblk]; 
           cfgid = findCFGID(posi, sizeCFG, sizeCSF);
           icfg[0] = configList[cfgid];
-          getTPSOperator(icfg[0], tpsval, configList, sizeCFG, nblk, TPSBlock, &graph, nsites, nholes);
-          tps += y[0]*y[0];
+          getTPSOperator(icfg[0], tpsval, xdi, configList, sizeCFG, nblk, TPSBlock, &graph, nsites, nholes);
+          tps += y[0]*y[0]*tpsval[0];
         }
       }
 
@@ -487,7 +499,7 @@ int main(int argc,char **argv)
   PetscCall(VecDestroy(&xi));
   PetscCall(VecDestroy(&vs2));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD,"===========================================\n"));
-  PetscCall(PetscPrintf(PETSC_COMM_WORLD,"HubHam: Success !!!                      \n"));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD,"DEHamv2: Success !!!                      \n"));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD,"===========================================\n"));
   PetscCall(SlepcFinalize());
   return 0;

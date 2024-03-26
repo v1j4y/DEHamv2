@@ -351,10 +351,10 @@ void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, si
                           igraph_vector_int_push_back(monoCFGList, pos);
 
                           // Add the position of the new alpha determinant to the list
-                          igraph_vector_push_back(monoMEs, Jme);
+                          igraph_vector_push_back(monoMEs, -Jme);
 
                           // Add the diagonal element
-                          Jmetot -= Jme;
+                          Jmetot += Jme;
                         }
                     }
                 }
@@ -383,10 +383,10 @@ void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, si
               igraph_vector_int_push_back(monoCFGList, pos);
 
               // Add the position of the new alpha determinant to the list
-              igraph_vector_push_back(monoMEs, Kme);
+              igraph_vector_push_back(monoMEs, -Kme);
 
               // Add the diagonal element
-              Kmetot -= Kme;
+              Kmetot += Kme;
             }
 
             igraph_vector_int_destroy(&orbital_id_allowed);
@@ -507,7 +507,7 @@ void getS2Operator(size_t Icsf, igraph_vector_t* MElist, igraph_vector_int_t* Jd
 }
 
 // Function to get the TPS operator
-void getTPSOperator(size_t detI, double *tpsval, size_t* cfgList, size_t sizeCFG, int nblk, size_t* TPSBlock, const igraph_t* graph, size_t nsites, size_t nholes) {
+void getTPSOperator(size_t detI, double *tpsval, double *xdi, size_t* cfgList, size_t sizeCFG, int nblk, size_t* TPSBlock, const igraph_t* graph, size_t nsites, size_t nholes) {
 
     size_t maskI = (((size_t)1 << (nsites))-1);
     size_t detIh = detI ^ maskI;
@@ -521,7 +521,8 @@ void getTPSOperator(size_t detI, double *tpsval, size_t* cfgList, size_t sizeCFG
       size_t blkj = TPSBlock[2*k+1];
       for (size_t i = 0; i < nholes; ++i) {
         if( (holesOut[i] >= blki) && (holesOut[i] <= blkj)) {
-          tpsval[k] += abs(nsites - holesOut[i]);
+          //tpsval[k] += abs(nsites - holesOut[i]);
+          tpsval[k] += xdi[holesOut[i]];
         }
       }
     }

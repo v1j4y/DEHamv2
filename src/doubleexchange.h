@@ -66,4 +66,4 @@ void adr (int *ideter, size_t *iii, size_t* configAlpha, size_t sizeAlpha, int n
 void getS2Operator(size_t Icsf, igraph_vector_t* MElist, igraph_vector_int_t* Jdetlist, size_t *configAlpha, size_t sizeAlpha, const igraph_t* graph, int natom, int natomax) ;
 
 // Function to get the TPS operator
-void getTPSOperator(size_t detI, double *tpsval, size_t* cfgList, size_t sizeCFG, int nblk, size_t* TPSBlock, const igraph_t* graph, size_t nsites, size_t nholes) ;
+void getTPSOperator(size_t detI, double *tpsval, double *xdi, size_t* cfgList, size_t sizeCFG, int nblk, size_t* TPSBlock, const igraph_t* graph, size_t nsites, size_t nholes) ;
