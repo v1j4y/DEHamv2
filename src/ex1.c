@@ -340,11 +340,12 @@ int main(int argc,char **argv)
      * Initialize distance matrix
      */
     for(size_t j=0;j<nsites;++j) {
+      xdi[j] = 0.0;
       if((nsites & 1)) {
-        xdi[j] = -((nsites-1)/2) + j;
+        xdi[j] = -((nsites-1.0)/2.0) + j;
       }
       else {
-        xdi[j] = 0.5 - ((nsites-0)/2) + j;
+        xdi[j] = 0.5 - ((nsites-0.0)/2.0) + j;
       }
     }
   }
