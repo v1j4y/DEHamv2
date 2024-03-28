@@ -25,7 +25,7 @@ int main(int argc,char **argv)
   EPS            eps;         /* eigenproblem solver context */
   EPSType        type;
   PetscReal      error,tol,re,im;
-  PetscScalar    kr,ki, dot, spin, tps, tpstot;
+  PetscScalar    kr,ki, dot, spin;
   Vec            xr,xi, vs2;
   PetscLogDouble t1,t2,tt1,tt2;
   PetscReal normfin;
@@ -450,13 +450,17 @@ int main(int argc,char **argv)
       }
       else spin = 100;
 
+      double tpstot[nblk]; 
       if(DoTPS) {
         /*
          * Get TPS value
          */
-        tps = 0.0;
-        tpstot = 0.0;
+        double tps[nblk]; 
+        for(size_t k=0;k<nblk;++k) {
+          tps[k] = 0.0;
+        }
         PetscCall(VecGetOwnershipRange(xr,&Istart,&Iend));
+        double tpsval[nblk]; 
         for (size_t j=Istart;j<Iend;j++) {
           double val;
           PetscInt ix[1];
@@ -464,17 +468,25 @@ int main(int argc,char **argv)
           ix[0] = (size_t)j;
           PetscCall(VecGetValues(xr, 1, ix, y));
           size_t posi = j;
-          double tpsval[nblk]; 
           cfgid = findCFGID(posi, sizeCFG, sizeCSF);
           icfg[0] = configList[cfgid];
           getTPSOperator(icfg[0], tpsval, xdi, configList, sizeCFG, nblk, TPSBlock, &graph, nsites, nholes);
-          tps += y[0]*y[0]*tpsval[0];
+          for(size_t k=0;k<nblk;++k) {
+            tps[k] += y[0]*y[0]*tpsval[k];
+          }
         }
-        MPI_Reduce(&tps, &tpstot, 1, MPI_DOUBLE, MPI_SUM, 0, PETSC_COMM_WORLD);
+        MPI_Reduce(&tps, &tpstot, nblk, MPI_DOUBLE, MPI_SUM, 0, PETSC_COMM_WORLD);
       }
 
       if (im!=0.0) PetscCall(PetscPrintf(PETSC_COMM_WORLD," %9f%+9fi %12g\n",(double)re,(double)im,(double)error));
-      else PetscCall(PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12g       %12f       %12f\n",(double)re,(double)error,(double)fabs(spin),(double)tpstot));
+      else PetscCall(PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12g       %12f",(double)re,(double)error,(double)fabs(spin)));
+      if(DoTPS) {
+        for(size_t j=0;j<nblk;++j) {
+          PetscCall(PetscPrintf(PETSC_COMM_WORLD,"       %12f",(double)tpstot[j]));
+        }
+      }
+      PetscCall(PetscPrintf(PETSC_COMM_WORLD,"\n"));
+
     }
     PetscCall(PetscPrintf(PETSC_COMM_WORLD,"\n"));
   }
