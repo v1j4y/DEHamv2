@@ -1,0 +1,76 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<graphml>
+ <key id='nodeKey1'
+     for='node'
+     attr.name='AtomicNumber'
+     attr.type='string' />
+ <key id='nodeKey2'
+     for='node'
+     attr.name='VertexCoordinates'
+     attr.type='string' />
+ <key id='edgeKey1'
+     for='edge'
+     attr.name='BondOrder'
+     attr.type='string' />
+ <graph id='Graph1'
+     edgedefault='undirected'>
+  <node id='1'>
+   <data key='nodeKey1'>6</data>
+   <data key='nodeKey2'>List[-2.598171468462263`, -0.2122000122070312`]</data>
+  </node>
+  <node id='2'>
+   <data key='nodeKey1'>6</data>
+   <data key='nodeKey2'>List[-1.7317714745657784`, 0.2869999694824218`]</data>
+  </node>
+  <node id='3'>
+   <data key='nodeKey1'>6</data>
+   <data key='nodeKey2'>List[-0.8661714226858956`, -0.21360000610351557`]</data>
+  </node>
+  <node id='4'>
+   <data key='nodeKey1'>6</data>
+   <data key='nodeKey2'>List[0.00022857121058879527`, 0.2858000183105468`]</data>
+  </node>
+  <node id='5'>
+   <data key='nodeKey1'>6</data>
+   <data key='nodeKey2'>List[0.865828584943499`, -0.21499999999999994`]</data>
+  </node>
+  <node id='6'>
+   <data key='nodeKey1'>6</data>
+   <data key='nodeKey2'>List[1.7322286169869558`, 0.2844000244140624`]</data>
+  </node>
+  <node id='7'>
+   <data key='nodeKey1'>6</data>
+   <data key='nodeKey2'>List[2.5978285925728932`, -0.21639999389648432`]</data>
+  </node>
+  <edge id='e1'
+      source='1'
+      target='2'>
+   <data key='edgeKey1'>Single</data>
+  </edge>
+  <edge id='e2'
+      source='2'
+      target='3'>
+   <data key='edgeKey1'>Single</data>
+  </edge>
+  <edge id='e3'
+      source='3'
+      target='4'>
+   <data key='edgeKey1'>Single</data>
+  </edge>
+  <edge id='e4'
+      source='4'
+      target='5'>
+   <data key='edgeKey1'>Single</data>
+  </edge>
+  <edge id='e5'
+      source='5'
+      target='6'>
+   <data key='edgeKey1'>Single</data>
+  </edge>
+  <edge id='e6'
+      source='6'
+      target='7'>
+   <data key='edgeKey1'>Single</data>
+  </edge>
+ </graph>
+</graphml>

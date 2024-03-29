@@ -1,0 +1,85 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<graphml>
+ <key id='nodeKey1'
+     for='node'
+     attr.name='AtomicNumber'
+     attr.type='string' />
+ <key id='nodeKey2'
+     for='node'
+     attr.name='VertexCoordinates'
+     attr.type='string' />
+ <key id='edgeKey1'
+     for='edge'
+     attr.name='BondOrder'
+     attr.type='string' />
+ <graph id='Graph1'
+     edgedefault='undirected'>
+  <node id='1'>
+   <data key='nodeKey1'>6</data>
+   <data key='nodeKey2'>List[3.0311999535560608`, 0.24759994506835936`]</data>
+  </node>
+  <node id='2'>
+   <data key='nodeKey1'>6</data>
+   <data key='nodeKey2'>List[2.164799959659576`, -0.2517999267578125`]</data>
+  </node>
+  <node id='3'>
+   <data key='nodeKey1'>6</data>
+   <data key='nodeKey2'>List[1.2991999840736388`, 0.24899993896484374`]</data>
+  </node>
+  <node id='4'>
+   <data key='nodeKey1'>6</data>
+   <data key='nodeKey2'>List[0.4327999901771546`, -0.2503999328613281`]</data>
+  </node>
+  <node id='5'>
+   <data key='nodeKey1'>6</data>
+   <data key='nodeKey2'>List[-0.4328000044822693`, 0.2503999328613281`]</data>
+  </node>
+  <node id='6'>
+   <data key='nodeKey1'>6</data>
+   <data key='nodeKey2'>List[-1.2991999793052673`, -0.24899993896484374`]</data>
+  </node>
+  <node id='7'>
+   <data key='nodeKey1'>6</data>
+   <data key='nodeKey2'>List[-2.1647999548912047`, 0.2517999267578125`]</data>
+  </node>
+  <node id='8'>
+   <data key='nodeKey1'>6</data>
+   <data key='nodeKey2'>List[-3.0311999487876893`, -0.24759994506835936`]</data>
+  </node>
+  <edge id='e1'
+      source='1'
+      target='2'>
+   <data key='edgeKey1'>Single</data>
+  </edge>
+  <edge id='e2'
+      source='2'
+      target='3'>
+   <data key='edgeKey1'>Single</data>
+  </edge>
+  <edge id='e3'
+      source='3'
+      target='4'>
+   <data key='edgeKey1'>Single</data>
+  </edge>
+  <edge id='e4'
+      source='4'
+      target='5'>
+   <data key='edgeKey1'>Single</data>
+  </edge>
+  <edge id='e5'
+      source='5'
+      target='6'>
+   <data key='edgeKey1'>Single</data>
+  </edge>
+  <edge id='e6'
+      source='6'
+      target='7'>
+   <data key='edgeKey1'>Single</data>
+  </edge>
+  <edge id='e7'
+      source='7'
+      target='8'>
+   <data key='edgeKey1'>Single</data>
+  </edge>
+ </graph>
+</graphml>
