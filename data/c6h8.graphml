@@ -1,0 +1,67 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<graphml>
+ <key id='nodeKey1'
+     for='node'
+     attr.name='AtomicNumber'
+     attr.type='string' />
+ <key id='nodeKey2'
+     for='node'
+     attr.name='VertexCoordinates'
+     attr.type='string' />
+ <key id='edgeKey1'
+     for='edge'
+     attr.name='BondOrder'
+     attr.type='string' />
+ <graph id='Graph1'
+     edgedefault='undirected'>
+  <node id='1'>
+   <data key='nodeKey1'>6</data>
+   <data key='nodeKey2'>List[-4.422999877929687`, -2.0116000366210938`]</data>
+  </node>
+  <node id='2'>
+   <data key='nodeKey1'>6</data>
+   <data key='nodeKey2'>List[-3.5570001220703125`, -1.5116000366210938`]</data>
+  </node>
+  <node id='3'>
+   <data key='nodeKey1'>6</data>
+   <data key='nodeKey2'>List[-3.5570001220703125`, -0.5115999984741211`]</data>
+  </node>
+  <node id='4'>
+   <data key='nodeKey1'>6</data>
+   <data key='nodeKey2'>List[-2.6910000610351563`, -0.01159999966621399`]</data>
+  </node>
+  <node id='5'>
+   <data key='nodeKey1'>6</data>
+   <data key='nodeKey2'>List[-2.6910000610351563`, 0.9883999633789062`]</data>
+  </node>
+  <node id='6'>
+   <data key='nodeKey1'>6</data>
+   <data key='nodeKey2'>List[-1.825`, 1.4883999633789062`]</data>
+  </node>
+  <edge id='e1'
+      source='1'
+      target='2'>
+   <data key='edgeKey1'>Double</data>
+  </edge>
+  <edge id='e2'
+      source='2'
+      target='3'>
+   <data key='edgeKey1'>Double</data>
+  </edge>
+  <edge id='e3'
+      source='3'
+      target='4'>
+   <data key='edgeKey1'>Double</data>
+  </edge>
+  <edge id='e4'
+      source='4'
+      target='5'>
+   <data key='edgeKey1'>Double</data>
+  </edge>
+  <edge id='e5'
+      source='5'
+      target='6'>
+   <data key='edgeKey1'>Double</data>
+  </edge>
+ </graph>
+</graphml>
