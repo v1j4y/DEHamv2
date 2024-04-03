@@ -140,7 +140,7 @@ int main(int argc,char **argv)
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] t          \t\t %10.5f |t| \n",(double)t_inp));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] J          \t\t %10.5f |t| \n",(double)Jme));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] K          \t\t %10.5f |t| \n",(double)Kme));
-  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] h          \t\t %" PetscInt_FMT "\n",(size_t)nholes));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] Nholes     \t\t %" PetscInt_FMT "\n",(size_t)nholes));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Wait] Generating CSFs... \t\t \n"));
 
   generateConfigurations(nsites, (nsites-nholes), configList, &sizeCFG);
@@ -231,9 +231,9 @@ int main(int argc,char **argv)
   if(DoS2){
     // Symmetric Matrix
     PetscCall(MatCreate(PETSC_COMM_WORLD,&S2));
-    PetscCall(MatCreateSBAIJ(PETSC_COMM_WORLD,1,PETSC_DECIDE,PETSC_DECIDE,n,n,nalpha*nalpha,NULL,nalpha*nalpha,NULL,&S2));
+    PetscCall(MatCreateSBAIJ(PETSC_COMM_WORLD,1,PETSC_DECIDE,PETSC_DECIDE,n,n,nholes*nalpha*nalpha,NULL,nholes*nalpha*nalpha,NULL,&S2));
     PetscCall(MatSetType (S2, MATSBAIJ));
-    PetscCall(MatMPIBAIJSetPreallocation(S2,1,nalpha*nalpha,NULL,nalpha*nalpha,NULL));
+    PetscCall(MatMPIBAIJSetPreallocation(S2,1,nholes*nalpha*nalpha,NULL,nholes*nalpha*nalpha,NULL));
   }
 
   PetscCall(PetscTime(&tt1));
@@ -417,7 +417,7 @@ int main(int argc,char **argv)
        Display eigenvalues and relative errors
     */
     PetscCall(PetscPrintf(PETSC_COMM_WORLD,
-         "           k          ||Ax-kx||/||kx||         S2                 TPS    \n"
+         "           k          ||Ax-kx||/||kx||         S2                 TPS (Diag, ExDiag)   \n"
          "   ----------------- -----------------------------------------------------\n"));
 
     for (i=0;i<nconv;i++) {
@@ -451,18 +451,25 @@ int main(int argc,char **argv)
       else spin = 100;
 
       double tpstot[nblk]; 
+      double tpstotdiag[nblk]; 
+      double tpstotexdiag[nblk]; 
       if(DoTPS) {
         /*
          * Get TPS value
          */
         double tps[nblk]; 
+        double tpsdiag[nblk]; 
+        double tpsexdiag[nblk]; 
         for(size_t k=0;k<nblk;++k) {
           tps[k] = 0.0;
+          tpsdiag[k] = 0.0;
+          tpsexdiag[k] = 0.0;
         }
         PetscCall(VecGetOwnershipRange(xr,&Istart,&Iend));
         double tpsval[nblk]; 
         for (size_t j=Istart;j<Iend;j++) {
           double val;
+          int isDiag;
           PetscInt ix[1];
           PetscScalar y[1];
           ix[0] = (size_t)j;
@@ -470,19 +477,29 @@ int main(int argc,char **argv)
           size_t posi = j;
           cfgid = findCFGID(posi, sizeCFG, sizeCSF);
           icfg[0] = configList[cfgid];
-          getTPSOperator(icfg[0], tpsval, xdi, configList, sizeCFG, nblk, TPSBlock, &graph, nsites, nholes);
+          isDiag = 0;
+          getTPSOperator(icfg[0], tpsval, xdi, configList, sizeCFG, nblk, TPSBlock, &graph, nsites, nholes, &isDiag);
           for(size_t k=0;k<nblk;++k) {
             tps[k] += y[0]*y[0]*tpsval[k];
+            if(isDiag) {
+              tpsdiag[k] += y[0]*y[0]*tpsval[k];
+            }
+            else {
+              tpsexdiag[k] += y[0]*y[0]*tpsval[k];
+            }
           }
+          //printf(" --> %d \n",isDiag);
         }
         MPI_Reduce(&tps, &tpstot, nblk, MPI_DOUBLE, MPI_SUM, 0, PETSC_COMM_WORLD);
+        MPI_Reduce(&tpsdiag, &tpstotdiag, nblk, MPI_DOUBLE, MPI_SUM, 0, PETSC_COMM_WORLD);
+        MPI_Reduce(&tpsexdiag, &tpstotexdiag, nblk, MPI_DOUBLE, MPI_SUM, 0, PETSC_COMM_WORLD);
       }
 
       if (im!=0.0) PetscCall(PetscPrintf(PETSC_COMM_WORLD," %9f%+9fi %12g\n",(double)re,(double)im,(double)error));
       else PetscCall(PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12g       %12f",(double)re,(double)error,(double)fabs(spin)));
       if(DoTPS) {
         for(size_t j=0;j<nblk;++j) {
-          PetscCall(PetscPrintf(PETSC_COMM_WORLD,"       %12f",(double)tpstot[j]));
+          PetscCall(PetscPrintf(PETSC_COMM_WORLD,"       %8f ( %8f %8f ) ",(double)tpstot[j], (double)tpstotdiag[j], (double)tpstotexdiag[j]));
         }
       }
       PetscCall(PetscPrintf(PETSC_COMM_WORLD,"\n"));

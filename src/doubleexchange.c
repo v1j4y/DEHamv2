@@ -507,20 +507,23 @@ void getS2Operator(size_t Icsf, igraph_vector_t* MElist, igraph_vector_int_t* Jd
 }
 
 // Function to get the TPS operator
-void getTPSOperator(size_t detI, double *tpsval, double *xdi, size_t* cfgList, size_t sizeCFG, int nblk, size_t* TPSBlock, const igraph_t* graph, size_t nsites, size_t nholes) {
+void getTPSOperator(size_t detI, double *tpsval, double *xdi, size_t* cfgList, size_t sizeCFG, int nblk, size_t* TPSBlock, const igraph_t* graph, size_t nsites, size_t nholes, int *isDiag) {
 
     size_t maskI = (((size_t)1 << (nsites))-1);
     size_t detIh = detI ^ maskI;
     // Get the number of holes
     size_t holesOut[nholes];
+    size_t holesPerBlk[nholes];
     getElecList(detIh, holesOut, nholes);
     // Loop over the hole positions
+    for(int k=0; k < nblk; ++k) holesPerBlk[k] = 0;
     for(int k=0; k < nblk; ++k) {
       tpsval[k] = 0.0;
       size_t blki = TPSBlock[2*k];
       size_t blkj = TPSBlock[2*k+1];
       for (size_t i = 0; i < nholes; ++i) {
         if( (holesOut[i] >= blki) && (holesOut[i] <= blkj)) {
+          holesPerBlk[k] += 1;
           for (size_t j = 0; j < nholes; ++j) {
             if( (holesOut[j] >= blki) && (holesOut[j] <= blkj)) {
               tpsval[k] += xdi[holesOut[i]-1]*xdi[holesOut[j]-1];
@@ -529,5 +532,10 @@ void getTPSOperator(size_t detI, double *tpsval, double *xdi, size_t* cfgList, s
         }
       }
     }
+    for(int k=0; k < nblk; ++k) {
+      if(holesPerBlk[k] > 1) *isDiag = 1;
+      //printf(" %ld ",holesPerBlk[k]);
+    }
+    //printf("%d\n",*isDiag);
 }
 
