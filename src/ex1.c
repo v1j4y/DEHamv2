@@ -420,7 +420,7 @@ int main(int argc,char **argv)
          "           k          ||Ax-kx||/||kx||         S2                 TPS (Diag, ExDiag)   \n"
          "   ----------------- -----------------------------------------------------\n"));
 
-    for (i=0;i<nconv;i++) {
+    for (i=0;i<nev;i++) {
       /*
         Get converged eigenpairs: i-th eigenvalue is stored in kr (real part) and
         ki (imaginary part)
