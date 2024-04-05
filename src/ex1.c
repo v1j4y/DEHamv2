@@ -218,6 +218,10 @@ int main(int argc,char **argv)
 
   PetscInt       n=sizeTotal,i,Istart,Iend,nev,maxit,its,nconv;
   PetscInt		   ncv, mpd;
+  // To print the matrix
+  PetscViewer viewer; // declare a viewer object
+  PetscViewerASCIIGetStdout(PETSC_COMM_WORLD, &viewer); // get the standard output
+
 
   // Symmetric Matrix
   PetscCall(MatCreate(PETSC_COMM_WORLD,&A));
@@ -283,7 +287,9 @@ int main(int argc,char **argv)
   PetscCall(MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY));
   PetscCall(PetscTime(&tt2));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to assemble the matrix: %f\n",tt2-tt1));
-  //PetscCall(MatView(A, viewer));
+  //if(DBGPrinting) {
+  //  PetscCall(MatView(A, viewer));
+  //}
 
   if(DoS2) {
     /*
@@ -476,7 +482,9 @@ int main(int argc,char **argv)
           PetscCall(VecGetValues(xr, 1, ix, y));
           size_t posi = j;
           cfgid = findCFGID(posi, sizeCFG, sizeCSF);
+          csfid = findCSFID(posi, sizeCFG, sizeCSF);
           icfg[0] = configList[cfgid];
+          icsf[0] = csfList[csfid];
           isDiag = 0;
           getTPSOperator(icfg[0], tpsval, xdi, configList, sizeCFG, nblk, TPSBlock, &graph, nsites, nholes, &isDiag);
           for(size_t k=0;k<nblk;++k) {
@@ -489,11 +497,27 @@ int main(int argc,char **argv)
             }
           }
           //printf(" --> %d \n",isDiag);
+          if(DBGPrinting) {
+            PetscCall(PetscPrintf(PETSC_COMM_WORLD,"%12f \t",y[0]));
+            printf("\t CFG: ");
+						for(size_t l=0; l < nsites; ++l) {
+              printf(" %d ",(1<<(l)) & icfg[0]? 1 : 0);
+            }
+            printf("\t CSF: ");
+						for(size_t l=0; l < nelec; ++l) {
+              printf(" %d ",(1<<(l)) & icsf[0]? 1 : 0);
+            }
+            PetscCall(PetscPrintf(PETSC_COMM_WORLD,"\n"));
+          }
         }
         MPI_Reduce(&tps, &tpstot, nblk, MPI_DOUBLE, MPI_SUM, 0, PETSC_COMM_WORLD);
         MPI_Reduce(&tpsdiag, &tpstotdiag, nblk, MPI_DOUBLE, MPI_SUM, 0, PETSC_COMM_WORLD);
         MPI_Reduce(&tpsexdiag, &tpstotexdiag, nblk, MPI_DOUBLE, MPI_SUM, 0, PETSC_COMM_WORLD);
       }
+
+      //if(DBGPrinting) {
+      //  PetscCall(VecView(xr, viewer));
+      //}
 
       if (im!=0.0) PetscCall(PetscPrintf(PETSC_COMM_WORLD," %9f%+9fi %12g\n",(double)re,(double)im,(double)error));
       else PetscCall(PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12g       %12f",(double)re,(double)error,(double)fabs(spin)));
