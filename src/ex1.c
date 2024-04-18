@@ -346,14 +346,36 @@ int main(int argc,char **argv)
      * Initialize distance matrix
      */
     for(size_t j=0;j<nsites;++j) {
-      xdi[j] = 0.0;
       if((nsites & 1)) {
-        xdi[j] = -((nsites-1.0)/2.0) + j;
+        // Odd
+        //xdi[j] = -((nsites-1.0)/2.0) + j;
+        /*
+         * New cyclic ordering
+         */
+        if(j < (nsites+1)/2) {
+          xdi[(nsites+1)/2 - j] = (-(nsites-1.0) + 2.0*j)/2.0;
+        }
+        else {
+          xdi[nsites-(j-(nsites/2)+0)] = (-(nsites-1.0) + 2.0*j)/2.0;
+        }
       }
       else {
-        xdi[j] = 0.5 - ((nsites-0.0)/2.0) + j;
+        // Even
+        //xdi[j] = 0.5 - ((nsites-0.0)/2.0) + j;
+        /*
+         * New cyclic ordering
+         */
+        if(j < nsites/2) {
+          xdi[(nsites/2-j) - 1] = (-(nsites-1.0) + 2.0*j)/2.0;
+        }
+        else {
+          xdi[(nsites-(j-(nsites/2)+0)) - 1] = (-(nsites-1.0) + 2.0*j)/2.0;
+        }
       }
     }
+    //for(size_t j=0;j<nsites;++j) {
+    //  printf("%12f \n",xdi[j]);
+    //}
   }
 
   // Save file
@@ -452,7 +474,7 @@ int main(int argc,char **argv)
         PetscCall(MatMult(S2, xr, vs2));
         PetscCall(VecDot(xr, vs2, &dot));
 
-        spin = solveQuad(1.0, 1.0, -1.0*dot);
+        spin = solveQuad(1.0, 1.0, -1.0*fabs(dot));
       }
       else spin = 100;
 
