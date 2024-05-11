@@ -248,7 +248,7 @@ void save_matrix(double** matrix, int rows, int cols, char* filename) {
 }
 
 // Function to generate all possible alpha determinants
-void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, size_t sizeCSF, const igraph_t* graph, size_t ipos, size_t Icfg, size_t Icsf, igraph_vector_int_t* monoCFGList, igraph_vector_t* monoMEs, double t, double Jme, double Kme) {
+void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, size_t sizeCSF, const igraph_t* graph, size_t ipos, size_t Icfg, size_t Icsf, igraph_vector_int_t* monoCFGList, igraph_vector_t* monoMEs, double t, double Jme, double Kme, int doRepulsion, double hrepVal) {
     // Get the number of orbitals
     size_t norb = igraph_vcount(graph);
     size_t nholes = norb - popcnt ( Icfg );
@@ -257,6 +257,31 @@ void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, si
     int phase = 1;
     size_t posCFG;
     findPositions(configList, sizeConfig, &Icfg, 1, &posCFG);
+    size_t posCSF;
+    findPositions(csfList, sizeCSF, &Icsf, 1, &posCSF);
+
+    // *********************
+    // Hole repulsion 
+    // -----------------
+    // 
+    // Get diagonal term
+    double hrepul = 0.0;
+    if(doRepulsion) {
+      size_t nbox = norb/3;
+      for (size_t i = 0; i < nbox; ++i) {
+        size_t ne = 0;
+        for(size_t j = i*3; j <  (i+1)*3; ++j) {
+          ne += ( (Icfg >> j) & 1) == 0 ? 0 : 1;
+        }
+        if( ne != 2) { 
+          //printf(" i=%ld  ne=%ld \n",i,ne);
+          hrepul += hrepVal;
+        }
+        //else{
+        //  printf(" i=%ld  ne=%ld \n",i,ne);
+        //}
+      }
+    }
 
     double Jmetot=0.0;
     double Kmetot=0.0;
@@ -397,7 +422,7 @@ void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, si
     igraph_vector_int_push_back(monoCFGList, ipos);
 
     // Add the position of the new alpha determinant to the list
-    igraph_vector_push_back(monoMEs, Jmetot + Kmetot);
+    igraph_vector_push_back(monoMEs, Jmetot + Kmetot + hrepul);
 }
 
 void getdet(size_t Icsf, int *ideter, size_t* configAlpha, size_t sizeAlpha, int norb) {

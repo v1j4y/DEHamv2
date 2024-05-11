@@ -54,7 +54,9 @@ int main(int argc,char **argv)
   PetscInt  DoS2 = 0;
   PetscInt  DoTPS = 0;
   PetscInt  DBGPrinting = 0;
+  PetscInt  doRepulsion = 0;
   PetscReal t_inp = -1.0;
+  PetscReal hrepVal_inp = -1.0;
   PetscReal Jme_inp =  0.030;
   PetscReal Kme_inp = -0.0;
   PetscCall(PetscOptionsGetInt(NULL,NULL,"-nh",&nholes,NULL));
@@ -71,10 +73,17 @@ int main(int argc,char **argv)
   PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate whether or not to S2 with the -hs2 option (1=true, 0=false)");
   PetscCall(PetscOptionsGetInt(NULL,NULL,"-pd",&DBGPrinting,NULL));
   PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate debug printing with the -pd option");
-  PetscCall(PetscOptionsGetInt(NULL,NULL,"-htps",&DoTPS,NULL));
-  PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate whether or not to TPS with the -htps option (1=true, 0=false)");
-  PetscCall(PetscOptionsGetString(NULL, NULL, "-htpsblk", tpsblk, sizeof(tpsblk), &flg));
-  PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Indicate tps blocks with -htpsblk option which inputs pairs of numbers separated by , (e.g. 1,2,3,4)");
+  PetscCall(PetscOptionsGetInt(NULL,NULL,"-hrep",&doRepulsion,NULL));
+  PetscCall(PetscOptionsGetInt(NULL,NULL,"-htps",&DoTPS,&flg));
+  //PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate whether or not to TPS with the -htps option (1=true, 0=false)");
+  if(DoTPS == 1) {
+    PetscCall(PetscOptionsGetString(NULL, NULL, "-htpsblk", tpsblk, sizeof(tpsblk), &flg));
+    PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Indicate tps blocks with -htpsblk option which inputs pairs of numbers separated by , (e.g. 1,2,3,4)");
+  }
+  if(doRepulsion == 1) {
+    PetscCall(PetscOptionsGetReal(NULL,NULL,"-hrepval",&hrepVal_inp,&flg));
+    PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Indicate hrepval blocks with -hrepval option ");
+  }
 
   /* 
    * Read the TPS Blocks into an array
@@ -141,6 +150,9 @@ int main(int argc,char **argv)
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] J          \t\t %10.5f |t| \n",(double)Jme));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] K          \t\t %10.5f |t| \n",(double)Kme));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] Nholes     \t\t %" PetscInt_FMT "\n",(size_t)nholes));
+  if(doRepulsion) {
+    PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] Repulsion  \t\t %10.5f |t| \n",(double)hrepVal_inp));
+  }
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Wait] Generating CSFs... \t\t \n"));
 
   generateConfigurations(nsites, (nsites-nholes), configList, &sizeCFG);
@@ -263,12 +275,13 @@ int main(int argc,char **argv)
     //printBits(icfg[0], nsites);
     //printBitsDE(icsf[0], nelec, nelecF1);
 
-    generateMonoCFGs(configList, sizeCFG, csfList, sizeCSF, &graph, posi, icfg[0], icsf[0], &monoCFGList, &monoMEs, t, Jme, Kme);
+    generateMonoCFGs(configList, sizeCFG, csfList, sizeCSF, &graph, posi, icfg[0], icsf[0], &monoCFGList, &monoMEs, t, Jme, Kme, doRepulsion, hrepVal_inp);
     //printf(" posi=%ld \n",i);
     for (int j = 0; j < igraph_vector_int_size(&monoCFGList); ++j) {
       PetscInt Jid = VECTOR(monoCFGList)[j];
       PetscReal val = VECTOR(monoMEs)[j];
       //PetscCall(MatSetValue(A,Jid,i,(PetscReal)val,ADD_VALUES));
+      //if(i==Jid) printf(" Jid=%ld val=%10.5f \n",Jid,val);
       if( i > Jid ) PetscCall(MatSetValue(A,Jid,i,(PetscReal)val,INSERT_VALUES));
       else          PetscCall(MatSetValue(A,i,Jid,(PetscReal)val,INSERT_VALUES));
       //matrix[posi][Jid] += val;
@@ -444,9 +457,16 @@ int main(int argc,char **argv)
     /*
        Display eigenvalues and relative errors
     */
+    if(DoTPS){
     PetscCall(PetscPrintf(PETSC_COMM_WORLD,
-         "           k          ||Ax-kx||/||kx||         S2                 TPS (Diag, ExDiag)   \n"
+         "           k          ||Ax-kx||/||kx||         S                  TPS (Diag, ExDiag)   \n"
          "   ----------------- -----------------------------------------------------\n"));
+    }
+    else{
+    PetscCall(PetscPrintf(PETSC_COMM_WORLD,
+         "           k          ||Ax-kx||/||kx||         S   \n"
+         "   ----------------- ----------------------------------\n"));
+    }
 
     for (i=0;i<nev;i++) {
       /*
