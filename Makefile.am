@@ -5,8 +5,8 @@ VERSION_MAJOR   = @VERSION_MAJOR@
 VERSION_MINOR   = @VERSION_MINOR@
 VERSION_PATCH   = @VERSION_PATCH@
 
-src_main_c = src/ex1.c src/doubleexchange.c src/readgraphmllib.c  src/utils.c
-src_main_h = src/doubleexchange.h src/readgraphmllib.h src/utils.h
+src_main_c = src/ex1.c src/doubleexchange.c src/readgraphmllib.c  src/utils.c src/functions.c src/get_proj_general.c
+src_main_h = src/doubleexchange.h src/readgraphmllib.h src/utils.h src/functions.h src/get_proj_general.h
 
 bin_PROGRAMS = $(top_builddir)/bin/ex1
 __top_builddir__bin_ex1_SOURCES = $(src_main_c)

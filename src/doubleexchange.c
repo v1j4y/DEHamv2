@@ -250,10 +250,10 @@ void save_matrix(double** matrix, int rows, int cols, char* filename) {
 // Function to generate all possible alpha determinants
 void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, size_t sizeCSF, const igraph_t* graph, size_t ipos, size_t Icfg, size_t Icsf, igraph_vector_int_t* monoCFGList, igraph_vector_t* monoMEs, double t, double Jme, double Kme, int doRepulsion, double hrepVal) {
     // Get the number of orbitals
-    size_t norb = igraph_vcount(graph);
-    size_t nholes = norb - popcnt ( Icfg );
-    size_t nelec = 2*norb - nholes;
-    size_t nelecF1 = norb - nholes;
+    size_t nsites = igraph_vcount(graph);
+    size_t nholes = nsites - popcnt ( Icfg );
+    size_t nelec = 2*nsites - nholes;
+    size_t nelecF1 = nsites - nholes;
     int phase = 1;
     size_t posCFG;
     findPositions(configList, sizeConfig, &Icfg, 1, &posCFG);
@@ -267,7 +267,7 @@ void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, si
     // Get diagonal term
     double hrepul = 0.0;
     if(doRepulsion) {
-      size_t nbox = norb/3;
+      size_t nbox = nsites/3;
       for (size_t i = 0; i < nbox; ++i) {
         size_t ne = 0;
         for(size_t j = i*3; j <  (i+1)*3; ++j) {
@@ -287,7 +287,7 @@ void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, si
     double Kmetot=0.0;
 
     // Loop over each orbital
-    for (size_t i = 0; i < norb; ++i) {
+    for (size_t i = 0; i < nsites; ++i) {
         // Check if the orbital is occupied
         if ((Icfg >> i) & 1) {
             // Get the connected vertices
@@ -393,6 +393,69 @@ void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, si
             // Check if there's K
             size_t i0, j0;
             size_t mask = (((size_t)1 << (i+1)) - 1);
+            /*
+             * 
+             *        i
+             *        | 
+             *       \|/
+             *        . 
+             *  6  5  4  3  2  1
+             *  - --------------
+             *  1  0  1  1  0  1
+             *  1  1  1  1  1  1
+             *  ----------------
+             *  7  8  9 10 11 12  
+             *        . 
+             *       /|\
+             *        | 
+             *        j  
+             *
+             *        i0
+             *        | 
+             *       \|/
+             *        . 
+             *  4     3  2     1
+             *  - --------------
+             *  1  0  1  1  0  1
+             *  1  1  1  1  1  1
+             *  ----------------
+             *  5  6  7  8  9 10  
+             *        . 
+             *       /|\
+             *        | 
+             *        j0 
+             *
+             *  CFG
+             *  1  1  1 1 1 1 1 0 1 1 0 1
+             *  CSF
+             *  1  1  1 1 1 1 1 1 1 1    
+             *  
+             *  Step 1
+             *  ======
+             *        j0          i0
+             *        |           |
+             *       \ /         \ /
+             *        .           . 
+             *  0  0  0 0 0 0 0 0 0 1 1 1
+             *  0  0  0 0 0 0 1 0 1 1 0 1
+             *  ------------------------- mask & Icfg
+             *  0  0  0 0 0 0 0 0 0 1 0 1
+             *
+             *  0  0  0 0 0 0 0 0 0 1 1 1
+             *  0  0  0 0 0 0 0 0 0 1 0 1
+             *  -------------------------  mask ^ ( (mask & icfg) )
+             *  0  0  0 0 0 0 0 0 0 0 1 0 -> 1
+             *
+             * nelecF1 = 12 - 6
+             *
+             * i0 = 4 - 1 =  3
+             * j0 = 3 + 4 =  7
+             *
+             *          7       3
+             *  1  1  1 1 1 1 1 1 1 1    
+             *
+             *
+             */
             i0 = i - popcnt ( mask ^ (mask & Icfg));
             j0 = i + nelecF1;
             if( (( (Icsf >> i0 ) & 1) ^ ((Icsf >> j0) & 1))  ) {

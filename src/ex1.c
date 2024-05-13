@@ -15,6 +15,7 @@ static char help[] = "Standard Double Exchange eigenproblem corresponding to the
 
 #include "doubleexchange.h"
 #include "readgraphmllib.h"
+#include "get_proj_general.h"
 #include "utils.h"
 
 int main(int argc,char **argv)
@@ -54,6 +55,8 @@ int main(int argc,char **argv)
   PetscInt  DoS2 = 0;
   PetscInt  DoTPS = 0;
   PetscInt  DBGPrinting = 0;
+  PetscInt  DoProj = 0;
+  PetscInt  DoProjPrint = 0;
   PetscInt  doRepulsion = 0;
   PetscReal t_inp = -1.0;
   PetscReal hrepVal_inp = -1.0;
@@ -74,6 +77,8 @@ int main(int argc,char **argv)
   PetscCall(PetscOptionsGetInt(NULL,NULL,"-pd",&DBGPrinting,NULL));
   PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate debug printing with the -pd option");
   PetscCall(PetscOptionsGetInt(NULL,NULL,"-hrep",&doRepulsion,NULL));
+  PetscCall(PetscOptionsGetInt(NULL,NULL,"-hproj",&DoProj,NULL));
+  PetscCall(PetscOptionsGetInt(NULL,NULL,"-hprojPrint",&DoProjPrint,NULL));
   PetscCall(PetscOptionsGetInt(NULL,NULL,"-htps",&DoTPS,&flg));
   //PetscCheck(flg, PETSC_COMM_WORLD, PETSC_ERR_USER, "Must indicate whether or not to TPS with the -htps option (1=true, 0=false)");
   if(DoTPS == 1) {
@@ -193,6 +198,37 @@ int main(int argc,char **argv)
    * -----------------
    * |1010100|0011001|
    * -----------------
+   *
+   * 
+   *        i
+   *        | 
+   *       \|/
+   *        . 
+   *  6  5  4  3  2  1
+   *  - --------------
+   *  1  0  1  1  0  1
+   *  1  1  1  1  1  1
+   *  ----------------
+   *  7  8  9 10 11 12  
+   *        . 
+   *       /|\
+   *        | 
+   *        j  
+   *
+   *        i0
+   *        | 
+   *       \|/
+   *        . 
+   *  4     3  2     1
+   *  - --------------
+   *  1  0  1  1  0  1
+   *  1  1  1  1  1  1
+   *  ----------------
+   *  5  6  7  8  9 10  
+   *        . 
+   *       /|\
+   *        | 
+   *        j0 
    *
    * The first part corresponds to the Family 1
    * orbital set and the second part to
@@ -462,6 +498,11 @@ int main(int argc,char **argv)
          "           k          ||Ax-kx||/||kx||         S                  TPS (Diag, ExDiag)   \n"
          "   ----------------- -----------------------------------------------------\n"));
     }
+    else if(DoProj){
+    PetscCall(PetscPrintf(PETSC_COMM_WORLD,
+         "           k          ||Ax-kx||/||kx||         S              Norm                 \n"
+         "   ----------------- -------------------------------------------------\n"));
+    }
     else{
     PetscCall(PetscPrintf(PETSC_COMM_WORLD,
          "           k          ||Ax-kx||/||kx||         S   \n"
@@ -557,6 +598,50 @@ int main(int argc,char **argv)
         MPI_Reduce(&tpsexdiag, &tpstotexdiag, nblk, MPI_DOUBLE, MPI_SUM, 0, PETSC_COMM_WORLD);
       }
 
+  int               nstates = get_nstates((int)nholes,(int)nalpha);
+  double            projvecfin[nev*nstates];
+  double            normhole, normholefin, normspace;
+  double            projvecfin2[nev*nstates];
+      if(DoProj){
+
+  double            projvec[nev*nstates], weightproj=0.0, weightproj2=0.0;
+  double            projvec2[nev*nstates];
+  double projmatrix[6][6];
+        int sze = 0;
+        int MS2 = 0;
+        double XS=0.0;
+        double V=0.0;
+        int colm=6;
+  const int            natomax=900;
+        get_proj_general(xr, 
+                         &Istart, 
+                         &Iend, 
+                         &nsites,
+                         i, 
+                         projvec, 
+                         projvec2, 
+                         &normhole, 
+                         natomax,
+                         (int)nholes,
+                         nalpha,
+                         (int)nholes,
+                         XS,
+                         V,
+                         colm,
+                         configList, 
+                         sizeCFG,
+                         csfList, 
+                         sizeCSF,
+                         &graph);
+          MPI_Reduce(&projvec, &projvecfin, nev*nstates, MPI_DOUBLE, MPI_SUM, 0, PETSC_COMM_WORLD);
+          MPI_Reduce(&projvec2, &projvecfin2, nev*nstates, MPI_DOUBLE, MPI_SUM, 0, PETSC_COMM_WORLD);
+          MPI_Reduce(&normhole, &normholefin, 1, MPI_DOUBLE, MPI_SUM, 0, PETSC_COMM_WORLD);
+          normspace = 0.0;
+          for(int ii=0;ii<nstates;++ii){
+            normspace += projvecfin[(i)*nstates + ii]*projvecfin[(i)*nstates + ii];
+          }
+      }
+
       //if(DBGPrinting) {
       //  PetscCall(VecView(xr, viewer));
       //}
@@ -568,7 +653,19 @@ int main(int argc,char **argv)
           PetscCall(PetscPrintf(PETSC_COMM_WORLD,"       %8f ( %8f %8f ) ",(double)tpstot[j], (double)tpstotdiag[j], (double)tpstotexdiag[j]));
         }
       }
+      else if(DoProj) {
+          PetscCall(PetscPrintf(PETSC_COMM_WORLD,"       %8f ",(double)normspace));
+      }
       PetscCall(PetscPrintf(PETSC_COMM_WORLD,"\n"));
+      if(DoProjPrint) {
+        PetscPrintf(PETSC_COMM_WORLD,"----------------------------\n");
+        PetscPrintf(PETSC_COMM_WORLD,"Printing projection vectors \n");
+        PetscPrintf(PETSC_COMM_WORLD,"----------------------------\n");
+        for(int ii=0;ii<nstates;++ii){
+          PetscPrintf(PETSC_COMM_WORLD,"%d %18f \n",ii,projvecfin[(i)*nstates + ii]);
+        }
+        PetscPrintf(PETSC_COMM_WORLD,"------     Done      -------\n");
+      }
 
     }
     PetscCall(PetscPrintf(PETSC_COMM_WORLD,"\n"));
