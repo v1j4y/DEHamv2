@@ -379,7 +379,11 @@ void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, si
                           igraph_vector_push_back(monoMEs, -Jme);
 
                           // Add the diagonal element
-                          Jmetot += Jme;
+                          Jmetot += 0.5*Jme;
+                        }
+                        else{
+                          // Add energy for  ↑ ↑
+                          Jmetot += -0.5*Jme;
                         }
                     }
                 }
@@ -411,7 +415,12 @@ void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, si
               igraph_vector_push_back(monoMEs, -Kme);
 
               // Add the diagonal element
-              Kmetot += Kme;
+              Kmetot += 0.5*Kme;
+            }
+            else{
+              // Add energy for  ↑  
+              //                 ↑  
+              Kmetot += -0.5*Kme;
             }
 
             igraph_vector_int_destroy(&orbital_id_allowed);
