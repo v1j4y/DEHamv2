@@ -650,8 +650,16 @@ int main(int argc,char **argv)
       if (im!=0.0) PetscCall(PetscPrintf(PETSC_COMM_WORLD," %9f%+9fi %12g\n",(double)re,(double)im,(double)error));
       else PetscCall(PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12g       %12f",(double)re,(double)error,(double)fabs(spin)));
       if(DoTPS) {
-        for(size_t j=0;j<nblk;++j) {
-          PetscCall(PetscPrintf(PETSC_COMM_WORLD,"       %8f ( %8f %8f ) ",(double)tpstot[j], (double)tpstotdiag[j], (double)tpstotexdiag[j]));
+        if(DoProj){
+          PetscCall(PetscPrintf(PETSC_COMM_WORLD,"       %8f (%8f) ",(double)normspace,(double)normholefin));
+          for(size_t j=0;j<nblk;++j) {
+            PetscCall(PetscPrintf(PETSC_COMM_WORLD,"       %8f ( %8f %8f ) ",(double)tpstot[j], (double)tpstotdiag[j], (double)tpstotexdiag[j]));
+          }
+        }
+        else{
+          for(size_t j=0;j<nblk;++j) {
+            PetscCall(PetscPrintf(PETSC_COMM_WORLD,"       %8f ( %8f %8f ) ",(double)tpstot[j], (double)tpstotdiag[j], (double)tpstotexdiag[j]));
+          }
         }
       }
       else if(DoProj) {
