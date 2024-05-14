@@ -449,6 +449,7 @@ int main(int argc,char **argv)
      Set solver parameters at runtime
   */
   tol = 1.e-16;
+  tol = 1.e-24;
   maxit = 10000000;
   PetscCall(EPSSetTolerances(eps,tol,maxit));
   //ncv  = 9;
@@ -500,7 +501,7 @@ int main(int argc,char **argv)
     }
     else if(DoProj){
     PetscCall(PetscPrintf(PETSC_COMM_WORLD,
-         "           k          ||Ax-kx||/||kx||         S              Norm                 \n"
+         "           k          ||Ax-kx||/||kx||         S              Norm^2         \n"
          "   ----------------- -------------------------------------------------\n"));
     }
     else{
@@ -638,7 +639,7 @@ int main(int argc,char **argv)
           MPI_Reduce(&normhole, &normholefin, 1, MPI_DOUBLE, MPI_SUM, 0, PETSC_COMM_WORLD);
           normspace = 0.0;
           for(int ii=0;ii<nstates;++ii){
-            normspace += projvecfin[(i)*nstates + ii]*projvecfin[(i)*nstates + ii];
+            normspace += projvecfin[(i)*nstates + ii]*projvecfin[(i)*nstates + ii]/(1.0-normholefin);
           }
       }
 
@@ -654,7 +655,7 @@ int main(int argc,char **argv)
         }
       }
       else if(DoProj) {
-          PetscCall(PetscPrintf(PETSC_COMM_WORLD,"       %8f ",(double)normspace));
+          PetscCall(PetscPrintf(PETSC_COMM_WORLD,"       %8f (%8f) ",(double)normspace,(double)normholefin));
       }
       PetscCall(PetscPrintf(PETSC_COMM_WORLD,"\n"));
       if(DoProjPrint) {

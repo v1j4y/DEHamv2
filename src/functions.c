@@ -241,11 +241,11 @@ int get_nstates(int sze_in, int ms)
 {
     int i, j, idx, sze;
     int arr[SZE_MAX];
-    int arr_all[DIM_MAX * SZE_MAX];
+    //int arr_all[DIM_MAX * SZE_MAX];
     int sum, nstate;
 
     idx = 0;
-    arr_all[0]=0;
+    //arr_all[0]=0;
     for(j=0;j<DIM_MAX;++j){
         sum = 0;
         nstate = 1;
@@ -255,10 +255,10 @@ int get_nstates(int sze_in, int ms)
             nstate *= factorial(5)/(factorial(arr[i])*factorial(5-arr[i]));
         }
         if(sum == ms && sze <= sze_in){
-            for(i=0;i<sze;++i)
-                arr_all[idx*SZE_MAX + i]=0;
-            for(i=0;i<sze;++i)
-                arr_all[idx*SZE_MAX + i]=arr[i];
+            //for(i=0;i<sze;++i)
+            //    arr_all[idx*SZE_MAX + i]=0;
+            //for(i=0;i<sze;++i)
+            //    arr_all[idx*SZE_MAX + i]=arr[i];
             idx++;
         }
     }
@@ -324,11 +324,11 @@ int prepare_dictionary(struct Dictionary *d, int sze_in, int ms)
 {
     int i, j, idx, sze;
     int arr[SZE_MAX];
-    int arr_all[DIM_MAX * SZE_MAX];
+    //int arr_all[DIM_MAX * SZE_MAX];
     int sum, nstate;
 
     idx = 0;
-    arr_all[0]=0;
+    //arr_all[0]=0;
     for(j=0;j<DIM_MAX;++j){
         sum = 0;
         nstate = 1;
@@ -341,10 +341,10 @@ int prepare_dictionary(struct Dictionary *d, int sze_in, int ms)
         //printf("\n");
         if(sum == ms && sze <= sze_in){
           //printf("\t %s \n",intToCharPtr(base10ToBase6(j)));
-            for(i=0;i<sze;++i)
-                arr_all[idx*SZE_MAX + i]=0;
-            for(i=0;i<sze;++i)
-                arr_all[idx*SZE_MAX + i]=arr[i];
+            //for(i=0;i<sze;++i)
+            //    arr_all[idx*SZE_MAX + i]=0;
+            //for(i=0;i<sze;++i)
+            //    arr_all[idx*SZE_MAX + i]=arr[i];
             // Add some key-value pairs
             //dictionary_add(d, intToCharPtr(idx), intToCharPtr(base10ToBase6(j)));
             dictionary_add(d, intToCharPtr(base10ToBase6(j)), intToCharPtr(nstate));
@@ -360,11 +360,11 @@ int prepare_dictionary_for_adressing(struct Dictionary *d, int sze_in, int ms)
 {
     int i, j, idx, sze;
     int arr[SZE_MAX];
-    int arr_all[DIM_MAX * SZE_MAX];
+    //int arr_all[DIM_MAX * SZE_MAX];
     int sum, nstate;
 
     idx = 0;
-    arr_all[0]=0;
+    //arr_all[0]=0;
     for(j=0;j<DIM_MAX;++j){
         sum = 0;
         nstate = 1;
@@ -374,10 +374,10 @@ int prepare_dictionary_for_adressing(struct Dictionary *d, int sze_in, int ms)
             nstate *= factorial(5)/(factorial(arr[i])*factorial(5-arr[i]));
         }
         if(sum == ms && sze <= sze_in){
-            for(i=0;i<sze;++i)
-                arr_all[idx*SZE_MAX + i]=0;
-            for(i=0;i<sze;++i)
-                arr_all[idx*SZE_MAX + i]=arr[i];
+            //for(i=0;i<sze;++i)
+            //    arr_all[idx*SZE_MAX + i]=0;
+            //for(i=0;i<sze;++i)
+            //    arr_all[idx*SZE_MAX + i]=arr[i];
             // Add some key-value pairs
             dictionary_add(d, intToCharPtr(base10ToBase6(j)), intToCharPtr(idx));
             idx++;

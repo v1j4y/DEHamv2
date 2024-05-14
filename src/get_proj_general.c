@@ -257,7 +257,7 @@ void get_proj_general(Vec valxr,
       double fhole  = fachole[idhole];
       double fspin  = 1.0/charPtrToInt(dictionary_get(d, intToCharPtr(addbase6)));
       ix[0] = (size_t)iiii;
-      //PetscCall(VecGetValues(valxr, 1, ix, y));
+      //PetscCall(VecGetValues(valxr, 1, ix, wfy));
       VecGetValues(valxr, 1, ix, wfy);
       projvec[(iroot)*idx + idspin] += wfy[0]*fhole*sqrt(fspin);
       //printf(" %10.5f %10.5f\n",fhole*sqrt(fspin),wfy[0]);
@@ -267,7 +267,7 @@ void get_proj_general(Vec valxr,
       ix[0] = (size_t)iiii;
       //PetscCall(VecGetValues(valxr, 1, ix, y));
       VecGetValues(valxr, 1, ix, wfy);
-      //*normproj += wfy[0]*wfy[0];
+      *normproj += wfy[0]*wfy[0];
       //printf(" y(%d)=%10.5f\n",iiii,wfy[0]);
     }
   }

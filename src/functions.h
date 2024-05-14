@@ -9,7 +9,7 @@
 #define SZE_HERE 4
 // 6^7 = 279936
 //#define DIM_MAX 279936
-#define DIM_MAX 36
+#define DIM_MAX 1296
 
 // A function to save a matrix in a file in CSV format
 void save_matrix(double** matrix, int rows, int cols, char* filename) ;
