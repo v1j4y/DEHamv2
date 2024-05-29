@@ -495,18 +495,25 @@ int main(int argc,char **argv)
        Display eigenvalues and relative errors
     */
     if(DoTPS){
-    PetscCall(PetscPrintf(PETSC_COMM_WORLD,
-         "           k          ||Ax-kx||/||kx||         S                  TPS (Diag, ExDiag)   \n"
-         "   ----------------- -----------------------------------------------------\n"));
+        if(DoProj){
+          PetscCall(PetscPrintf(PETSC_COMM_WORLD,
+               "           E          ||Ax-Ex||/||Ex||         S                  Norm^2 (Ion, Pair)                   TPS (Diag, ExDiag)  \n"
+               "   ----------------- ----------------------------------------------------------------------------------------------------------\n"));
+        }
+        else{
+          PetscCall(PetscPrintf(PETSC_COMM_WORLD,
+               "           E          ||Ax-Ex||/||Ex||         S                  TPS (Diag, ExDiag)   \n"
+               "   ----------------- -----------------------------------------------------\n"));
+        }
     }
     else if(DoProj){
     PetscCall(PetscPrintf(PETSC_COMM_WORLD,
-         "           k          ||Ax-kx||/||kx||         S              Norm^2         \n"
+         "           E          ||Ax-Ex||/||Ex||         S              Norm^2         \n"
          "   ----------------- -------------------------------------------------\n"));
     }
     else{
     PetscCall(PetscPrintf(PETSC_COMM_WORLD,
-         "           k          ||Ax-kx||/||kx||         S   \n"
+         "           E          ||Ax-Ex||/||Ex||         S   \n"
          "   ----------------- ----------------------------------\n"));
     }
 
