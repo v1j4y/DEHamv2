@@ -252,6 +252,7 @@ void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, si
     // Get the number of orbitals
     size_t nsites = igraph_vcount(graph);
     size_t nholes = nsites - popcnt ( Icfg );
+    size_t numk   = nsites - nholes;
     size_t nelec = 2*nsites - nholes;
     size_t nelecF1 = nsites - nholes;
     int phase = 1;
@@ -494,7 +495,7 @@ void generateMonoCFGs(size_t* configList, size_t sizeConfig, size_t* csfList, si
     igraph_vector_int_push_back(monoCFGList, ipos);
 
     // Add the position of the new alpha determinant to the list
-    igraph_vector_push_back(monoMEs, Jmetot + Kmetot + hrepul);
+    igraph_vector_push_back(monoMEs, Jmetot + Kmetot + hrepul + 0.5*numk * Kme);
 }
 
 void getdet(size_t Icsf, int *ideter, size_t* configAlpha, size_t sizeAlpha, int norb) {
