@@ -543,11 +543,13 @@ int main(int argc,char **argv)
       double tpstot[nblk]; 
       double tpstotdiag[nblk]; 
       double tpstotexdiag[nblk]; 
+      double weightholePairtot=0.0; 
       if(DoTPS) {
         /*
          * Get TPS value
          */
         double tps[nblk]; 
+        double weightholePair=0.0; 
         double tpsdiag[nblk]; 
         double tpsexdiag[nblk]; 
         for(size_t k=0;k<nblk;++k) {
@@ -560,6 +562,7 @@ int main(int argc,char **argv)
         for (size_t j=Istart;j<Iend;j++) {
           double val;
           int isDiag;
+          int holePair;
           PetscInt ix[1];
           PetscScalar y[1];
           ix[0] = (size_t)j;
@@ -570,7 +573,10 @@ int main(int argc,char **argv)
           icfg[0] = configList[cfgid];
           icsf[0] = csfList[csfid];
           isDiag = 0;
-          getTPSOperator(icfg[0], tpsval, xdi, configList, sizeCFG, nblk, TPSBlock, &graph, nsites, nholes, &isDiag);
+          getTPSOperator(icfg[0], tpsval, xdi, configList, sizeCFG, nblk, TPSBlock, &graph, nsites, nholes, &isDiag, &holePair);
+          if (holePair == 1) {
+            weightholePair += y[0]*y[0];
+          }
           for(size_t k=0;k<nblk;++k) {
             tps[k] += y[0]*y[0]*tpsval[k];
             if(isDiag) {
@@ -597,6 +603,7 @@ int main(int argc,char **argv)
         MPI_Reduce(&tps, &tpstot, nblk, MPI_DOUBLE, MPI_SUM, 0, PETSC_COMM_WORLD);
         MPI_Reduce(&tpsdiag, &tpstotdiag, nblk, MPI_DOUBLE, MPI_SUM, 0, PETSC_COMM_WORLD);
         MPI_Reduce(&tpsexdiag, &tpstotexdiag, nblk, MPI_DOUBLE, MPI_SUM, 0, PETSC_COMM_WORLD);
+        MPI_Reduce(&weightholePair, &weightholePairtot, 1, MPI_DOUBLE, MPI_SUM, 0, PETSC_COMM_WORLD);
       }
 
   int               nstates = get_nstates((int)nholes,(int)nalpha);
@@ -651,7 +658,7 @@ int main(int argc,char **argv)
       else PetscCall(PetscPrintf(PETSC_COMM_WORLD,"   %12f       %12g       %12f",(double)re,(double)error,(double)fabs(spin)));
       if(DoTPS) {
         if(DoProj){
-          PetscCall(PetscPrintf(PETSC_COMM_WORLD,"       %8f (%8f) ",(double)normspace,(double)normholefin));
+          PetscCall(PetscPrintf(PETSC_COMM_WORLD,"       %8f (%8f) (%8f) ",(double)normspace,(double)normholefin,(double)weightholePairtot));
           for(size_t j=0;j<nblk;++j) {
             PetscCall(PetscPrintf(PETSC_COMM_WORLD,"       %8f ( %8f %8f ) ",(double)tpstot[j], (double)tpstotdiag[j], (double)tpstotexdiag[j]));
           }
@@ -663,7 +670,7 @@ int main(int argc,char **argv)
         }
       }
       else if(DoProj) {
-          PetscCall(PetscPrintf(PETSC_COMM_WORLD,"       %8f (%8f) ",(double)normspace,(double)normholefin));
+          PetscCall(PetscPrintf(PETSC_COMM_WORLD,"       %8f (%8f) (%8f) ",(double)normspace,(double)normholefin,(double)weightholePairtot));
       }
       PetscCall(PetscPrintf(PETSC_COMM_WORLD,"\n"));
       if(DoProjPrint) {

@@ -605,7 +605,7 @@ void getS2Operator(size_t Icsf, igraph_vector_t* MElist, igraph_vector_int_t* Jd
 }
 
 // Function to get the TPS operator
-void getTPSOperator(size_t detI, double *tpsval, double *xdi, size_t* cfgList, size_t sizeCFG, int nblk, size_t* TPSBlock, const igraph_t* graph, size_t nsites, size_t nholes, int *isDiag) {
+void getTPSOperator(size_t detI, double *tpsval, double *xdi, size_t* cfgList, size_t sizeCFG, int nblk, size_t* TPSBlock, const igraph_t* graph, size_t nsites, size_t nholes, int *isDiag, int *holePair) {
 
     size_t maskI = (((size_t)1 << (nsites))-1);
     size_t detIh = detI ^ maskI;
@@ -623,6 +623,9 @@ void getTPSOperator(size_t detI, double *tpsval, double *xdi, size_t* cfgList, s
         if( (holesOut[i] >= blki) && (holesOut[i] <= blkj)) {
           holesPerBlk[k] += 1;
           for (size_t j = 0; j < nholes; ++j) {
+            if( abs(holesOut[j] - holesOut[i]) == 1) {
+              holePair[0]=1;
+            }
             if( (holesOut[j] >= blki) && (holesOut[j] <= blkj)) {
               tpsval[k] += xdi[holesOut[i]-1]*xdi[holesOut[j]-1];
             }
