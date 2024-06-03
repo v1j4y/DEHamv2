@@ -96,6 +96,44 @@ void get_proj_general(Vec valxr,
   //double normvec[dim];
   int ms[nholes];
   int idh[nholes];
+  //double fachole1[9];
+  //double fachole2[9];
+  //double fachole3[9];
+  //double fachole4[9];
+  //double fachole5[9];
+  //double fachole6[9];
+  //double fachole7[9];
+  //double fachole8[9];
+  //double fachole9[9];
+  //double normproj1tot=0.0;
+  //double normproj2tot=0.0;
+  //double normproj3tot=0.0;
+  //double normproj4tot=0.0;
+  //double normproj5tot=0.0;
+  //double normproj6tot=0.0;
+  //double normproj7tot=0.0;
+  //double normproj8tot=0.0;
+  //double normproj9tot=0.0;
+  //double normproj1[6];
+  //double normproj2[6];
+  //double normproj3[6];
+  //double normproj4[6];
+  //double normproj5[6];
+  //double normproj6[6];
+  //double normproj7[6];
+  //double normproj8[6];
+  //double normproj9[6];
+  //for(int i=0;i<6;++i) {
+  //  normproj1[i]=0.0;
+  //  normproj2[i]=0.0;
+  //  normproj3[i]=0.0;
+  //  normproj4[i]=0.0;
+  //  normproj5[i]=0.0;
+  //  normproj6[i]=0.0;
+  //  normproj7[i]=0.0;
+  //  normproj8[i]=0.0;
+  //  normproj9[i]=0.0;
+  //}
 
   PetscInt ix[1];
   PetscScalar wfy[1];
@@ -170,6 +208,96 @@ void get_proj_general(Vec valxr,
   //printf(" idx=%d dim=%d sizefac=%d sze=%d MS2=%d\n",idx,dim,sizefac,sze,MS2);
   V = 0.0;
   prepareHueckelFactors(nholes, fachole, V, sizefac);
+  // First vector
+  //fachole1[0] = 1./4;
+  //fachole1[1] = -sqrt(1./8);
+  //fachole1[2] = 1./4;
+  //fachole1[3] = -sqrt(1./8);
+  //fachole1[4] = 1./2;
+  //fachole1[5] = -sqrt(1./8);
+  //fachole1[6] = 1./4;
+  //fachole1[7] = -sqrt(1./8);
+  //fachole1[8] = 1./4;
+  //// 2 vector
+  //fachole2[0] = 1./4;
+  //fachole2[1] = sqrt(1./8);
+  //fachole2[2] = 1./4;
+  //fachole2[3] = -sqrt(1./8);
+  //fachole2[4] = -1./2;
+  //fachole2[5] = -sqrt(1./8);
+  //fachole2[6] = 1./4;
+  //fachole2[7] = sqrt(1./8);
+  //fachole2[8] = 1./4;
+  //// 3 vector
+  //fachole3[0] = -sqrt(1./8);
+  //fachole3[1] = 0.0;
+  //fachole3[2] = sqrt(1./8);
+  //fachole3[3] = 1./2;
+  //fachole3[4] = 0.0;
+  //fachole3[5] = -1./2;
+  //fachole3[6] = -sqrt(1./8);
+  //fachole3[7] = 0.0;
+  //fachole3[8] = sqrt(1./8);
+  //// 4 vector
+  //fachole4[0] = 1./4;
+  //fachole4[1] = -sqrt(1./8);
+  //fachole4[2] = 1./4;
+  //fachole4[3] = sqrt(1./8);
+  //fachole4[4] = -1./2;
+  //fachole4[5] = sqrt(1./8);
+  //fachole4[6] = 1./4;
+  //fachole4[7] = -sqrt(1./8);
+  //fachole4[8] = 1./4;
+  //// 5 vector
+  //fachole5[0] = 1./4;
+  //fachole5[1] = sqrt(1./8);
+  //fachole5[2] = 1./4;
+  //fachole5[3] = sqrt(1./8);
+  //fachole5[4] = 1./2;
+  //fachole5[5] = sqrt(1./8);
+  //fachole5[6] = 1./4;
+  //fachole5[7] = sqrt(1./8);
+  //fachole5[8] = 1./4;
+  //// 6 vector
+  //fachole6[0] = -sqrt(1./8);
+  //fachole6[1] = 0.0;
+  //fachole6[2] = sqrt(1./8);
+  //fachole6[3] = -1./2;
+  //fachole6[4] = 0.0;
+  //fachole6[5] = 1./2;
+  //fachole6[6] = -sqrt(1./8);
+  //fachole6[7] = 0.0;
+  //fachole6[8] = sqrt(1./8);
+  //// 7 vector
+  //fachole7[0] = -sqrt(1./8);
+  //fachole7[1] = 1./2;
+  //fachole7[2] = -sqrt(1./8);
+  //fachole7[3] = 0.0;
+  //fachole7[4] = 0.0;
+  //fachole7[5] = 0.0;
+  //fachole7[6] = sqrt(1./8);
+  //fachole7[7] = -1./2;
+  //fachole7[8] = sqrt(1./8);
+  //// 8 vector
+  //fachole8[0] = -sqrt(1./8);
+  //fachole8[1] = -1./2;
+  //fachole8[2] = -sqrt(1./8);
+  //fachole8[3] = 0.0;
+  //fachole8[4] = 0.0;
+  //fachole8[5] = 0.0;
+  //fachole8[6] = sqrt(1./8);
+  //fachole8[7] = 1./2;
+  //fachole8[8] = sqrt(1./8);
+  //// 9 vector
+  //fachole9[0] = 1./2;
+  //fachole9[1] = 0.0;
+  //fachole9[2] = -1./2;
+  //fachole9[3] = 0.0;
+  //fachole9[4] = 0.0;
+  //fachole9[5] = 0.0;
+  //fachole9[6] = -1./2;
+  //fachole9[7] = 0.0;
+  //fachole9[8] = 1./2;
 
   size_t icfg[1];
   size_t icsf[1];
@@ -200,8 +328,9 @@ void get_proj_general(Vec valxr,
       ms[kk]=0;
     
     // Set holes to -1
-    for(kk=0;kk<nholes;++kk)
+    for(kk=0;kk<nholes;++kk) {
       idh[kk]=-1;
+    }
    
     // Calculate MS
       //printf(" Calc MS\n");
@@ -260,19 +389,43 @@ void get_proj_general(Vec valxr,
       //PetscCall(VecGetValues(valxr, 1, ix, wfy));
       VecGetValues(valxr, 1, ix, wfy);
       projvec[(iroot)*idx + idspin] += wfy[0]*fhole*sqrt(fspin);
+      //normproj1[idspin] += (wfy[0]*fachole1[idhole]*sqrt(fspin));
+      //normproj2[idspin] += (wfy[0]*fachole2[idhole]*sqrt(fspin));
+      //normproj3[idspin] += (wfy[0]*fachole3[idhole]*sqrt(fspin));
+      //normproj4[idspin] += (wfy[0]*fachole4[idhole]*sqrt(fspin));
+      //normproj5[idspin] += (wfy[0]*fachole5[idhole]*sqrt(fspin));
+      //normproj6[idspin] += (wfy[0]*fachole6[idhole]*sqrt(fspin));
+      //normproj7[idspin] += (wfy[0]*fachole7[idhole]*sqrt(fspin));
+      //normproj8[idspin] += (wfy[0]*fachole8[idhole]*sqrt(fspin));
+      //normproj9[idspin] += (wfy[0]*fachole9[idhole]*sqrt(fspin));
       //printf(" %10.5f %10.5f\n",fhole*sqrt(fspin),wfy[0]);
-      //*normproj += wfy[0]*wfy[0];
+      //printf("%d 1 idhole=%d fac=%8f fac1=%8f\n",iii,idhole,fachole[idhole],fachole2[idhole]);
     }
     else{
       ix[0] = (size_t)iiii;
       //PetscCall(VecGetValues(valxr, 1, ix, y));
       VecGetValues(valxr, 1, ix, wfy);
-      *normproj += wfy[0]*wfy[0];
+      normproj[0] += wfy[0]*wfy[0];
       //printf(" y(%d)=%10.5f\n",iiii,wfy[0]);
+      //printf("%d 0 \n",iii);
     }
   }
 
-  //printf(" norm=%10.5f\n",normproj[0]);
+  //for(int i=0;i<6;++i) {
+  //  normproj1tot += normproj1[i]*normproj1[i];
+  //  normproj2tot += normproj2[i]*normproj2[i];
+  //  normproj3tot += normproj3[i]*normproj3[i];
+  //  normproj4tot += normproj4[i]*normproj4[i];
+  //  normproj5tot += normproj5[i]*normproj5[i];
+  //  normproj6tot += normproj6[i]*normproj6[i];
+  //  normproj7tot += normproj7[i]*normproj7[i];
+  //  normproj8tot += normproj8[i]*normproj8[i];
+  //  normproj9tot += normproj9[i]*normproj9[i];
+  //}
+
+  //printf(" norm=%8f norm2=%8f norm3=%8f sum=%8f\n",normproj1tot,normproj2tot,normproj3tot,normproj1tot+normproj2tot+normproj3tot);
+  //printf(" norm=%8f norm2=%8f norm3=%8f sum=%8f\n",normproj4tot,normproj5tot,normproj6tot,normproj4tot+normproj5tot+normproj6tot);
+  //printf(" norm=%8f norm2=%8f norm3=%8f sum=%8f\n",normproj7tot,normproj8tot,normproj9tot,normproj7tot+normproj8tot+normproj9tot);
   //for(int ii=0;ii<idx;++ii){
   //  printf(" %10.5f\n",projvec[(iroot)*idx + ii]);
   //}

@@ -31,6 +31,7 @@ int main(int argc,char **argv)
   PetscLogDouble t1,t2,tt1,tt2;
   PetscReal normfin;
   PetscReal xymatfin = 0.0;
+  PetscMPIInt    rank, size;
 
   PetscFunctionBeginUser;
   PetscCall(SlepcInitialize(&argc,&argv,(char*)0,help));
@@ -45,6 +46,8 @@ int main(int argc,char **argv)
     fprintf(stderr, "Error opening the file.\n");
     return 1;  // Return an error code or use another error handling method.
   }
+  MPI_Comm_size(PETSC_COMM_WORLD,&size);
+  MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
   /*
     Enter the options for the number of holes and
@@ -155,6 +158,7 @@ int main(int argc,char **argv)
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] J          \t\t %10.5f |t| \n",(double)Jme));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] K          \t\t %10.5f |t| \n",(double)Kme));
   PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] Nholes     \t\t %" PetscInt_FMT "\n",(size_t)nholes));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] NCPUs      \t\t %" PetscInt_FMT "\n",(size_t)size));
   if(doRepulsion) {
     PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] Repulsion  \t\t %10.5f |t| \n",(double)hrepVal_inp));
   }
@@ -328,14 +332,14 @@ int main(int argc,char **argv)
     igraph_vector_destroy(&monoMEs);
   }
   PetscCall(PetscTime(&tt2));
-  PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to build the matrix: %f\n",tt2-tt1));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Time] used to build the matrix: %f\n",tt2-tt1));
 
 
   PetscCall(PetscTime(&tt1));
   PetscCall(MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY));
   PetscCall(MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY));
   PetscCall(PetscTime(&tt2));
-  PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to assemble the matrix: %f\n",tt2-tt1));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Time] used to assemble the matrix: %f\n",tt2-tt1));
   //if(DBGPrinting) {
   //  PetscCall(MatView(A, viewer));
   //}
@@ -375,14 +379,14 @@ int main(int argc,char **argv)
       igraph_vector_destroy(&monoMEs);
     }
     PetscCall(PetscTime(&tt2));
-    PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to build the S2 operator: %f\n",tt2-tt1));
+    PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Time] used to build the S2 operator: %f\n",tt2-tt1));
 
 
     PetscCall(PetscTime(&tt1));
     PetscCall(MatAssemblyBegin(S2,MAT_FINAL_ASSEMBLY));
     PetscCall(MatAssemblyEnd(S2,MAT_FINAL_ASSEMBLY));
     PetscCall(PetscTime(&tt2));
-    PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to assemble the matrix: %f\n",tt2-tt1));
+    PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Time] used to assemble the matrix: %f\n",tt2-tt1));
   }
 
   PetscCall(MatCreateVecs(A,NULL,&xr));
@@ -465,8 +469,9 @@ int main(int argc,char **argv)
   PetscCall(PetscTime(&t1));
   PetscCall(EPSSolve(eps));
   PetscCall(PetscTime(&t2));
-  PetscCall(PetscPrintf(PETSC_COMM_WORLD," Time used to Solve EVP: %f\n",t2-t1));
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Time] used to Solve EVP: %f\n",t2-t1));
 
+  PetscCall(PetscPrintf(PETSC_COMM_WORLD," [Info] EVP: \n"));
   /*
      Optional: Get some information from the solver and display it
   */
